@@ -1,0 +1,71 @@
+name: system_movil
+description: "GlowNic - Sistema de gestión profesional para salones de belleza."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI Components
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  iconsax: ^0.0.8
+  awesome_snackbar_content: ^0.1.7
+  badges: ^3.0.0
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # Networking
+  dio: ^5.9.0
+
+  # Storage
+  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.5.3
+
+  # Utilities
+  url_launcher: ^6.3.0
+  qr_flutter: ^4.1.0
+  share_plus: ^10.1.2
+  path_provider: ^2.1.4
+  cross_file: ^0.3.4
+  
+  # Audio
+  audioplayers: ^6.1.0
+
+  # Localization
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/logo1.png
+    - assets/images/logo2.png
+    - assets/images/logo3.png
+    - assets/images/logobarbe.png
+    - assets/images/glownic.png
+    - assets/images/logo5.png
+    - assets/audios/success.mp3
+    - assets/audios/error.mp3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/glownic.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/glownic.png"
