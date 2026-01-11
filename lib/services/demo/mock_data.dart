@@ -1,7 +1,7 @@
 import '../../models/appointment.dart';
 import '../../models/service.dart';
-import '../../models/barber.dart';
-import '../../models/dashboard_barber.dart';
+import '../../models/salon.dart';
+import '../../models/dashboard_salon.dart';
 import '../../models/user_profile.dart';
 
 /// Datos mock estáticos para el modo demo
@@ -203,9 +203,9 @@ class MockData {
   }
 
   // Dashboard mock
-  static BarberDashboardDto get mockDashboard {
+  static SalonDashboardDto get mockDashboard {
     final now = DateTime.now();
-    final barber = BarberDto(
+    final salon = SalonDto(
       id: 1,
       name: 'Usuario de Prueba',
       businessName: 'Salón GlowNic',
@@ -217,8 +217,8 @@ class MockData {
       email: 'demo@glownic.com',
     );
 
-    return BarberDashboardDto(
-      barber: barber,
+    return SalonDashboardDto(
+      salon: salon,
       today: TodayStats(
         appointments: 4,
         completed: 2,
@@ -259,8 +259,8 @@ class MockData {
     phone: '8888-8888',
   );
 
-  // Perfil de barbero demo
-  static BarberDto get mockBarberProfile => BarberDto(
+  // Perfil de dueño demo
+  static SalonDto get mockSalonProfile => SalonDto(
     id: 1,
     name: 'Usuario de Prueba',
       businessName: 'Salón GlowNic',

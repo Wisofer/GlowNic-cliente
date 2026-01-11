@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
-import '../../models/barber.dart';
-import '../../services/api/barber_service.dart';
+import '../../models/salon.dart';
+import '../../services/api/salon_service.dart';
 
 class WorkingHoursScreen extends ConsumerStatefulWidget {
   const WorkingHoursScreen({super.key});
@@ -43,7 +43,7 @@ class _WorkingHoursScreenState extends ConsumerState<WorkingHoursScreen> {
     });
 
     try {
-      final service = ref.read(barberServiceProvider);
+      final service = ref.read(salonServiceProvider);
       final workingHours = await service.getWorkingHours();
 
       // Inicializar todos los días (0-6)
@@ -120,7 +120,7 @@ class _WorkingHoursScreenState extends ConsumerState<WorkingHoursScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final service = ref.read(barberServiceProvider);
+      final service = ref.read(salonServiceProvider);
       
       // Preparar datos para enviar
       final workingHours = _schedules.values.map((schedule) => {

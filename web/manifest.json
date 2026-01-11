@@ -1,6 +1,6 @@
 {
-    "name": "BarbeNic",
-    "short_name": "BarbeNic",
+    "name": "GlowNic",
+    "short_name": "GlowNic",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#ffffff",

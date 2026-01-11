@@ -226,7 +226,7 @@ class _EmployeeReportsScreenState extends ConsumerState<EmployeeReportsScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Los reportes de empleados solo están disponibles para el dueño de la barbería.',
+                  'Los reportes de empleados solo están disponibles para el dueño del salón.',
                   style: GoogleFonts.inter(
                     color: mutedColor,
                     fontSize: 14,

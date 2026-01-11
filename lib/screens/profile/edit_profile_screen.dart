@@ -4,12 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
-import '../../models/barber.dart';
-import '../../services/api/barber_service.dart';
+import '../../models/salon.dart';
+import '../../services/api/salon_service.dart';
 import '../../utils/audio_helper.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
-  final BarberDto profile;
+  final SalonDto profile;
 
   const EditProfileScreen({super.key, required this.profile});
 
@@ -63,7 +63,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final service = ref.read(barberServiceProvider);
+      final service = ref.read(salonServiceProvider);
       await service.updateProfile(
         name: _nameController.text.trim(),
         businessName: _businessNameController.text.trim().isEmpty
@@ -173,7 +173,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               controller: _businessNameController,
               label: 'Nombre del Negocio',
               icon: Iconsax.shop,
-              hintText: 'Nombre de tu barbería (opcional)',
+              hintText: 'Nombre de tu salón (opcional)',
               textColor: textColor,
               mutedColor: mutedColor,
               cardColor: cardColor,

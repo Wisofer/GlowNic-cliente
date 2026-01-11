@@ -10,12 +10,12 @@ import 'package:share_plus/share_plus.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:dio/dio.dart';
-import '../../models/barber.dart';
+import '../../models/salon.dart';
 import '../../models/auth.dart';
-import '../../services/api/barber_service.dart';
+import '../../services/api/salon_service.dart';
 
 class QrCodeScreen extends ConsumerStatefulWidget {
-  final BarberDto profile;
+  final SalonDto profile;
 
   const QrCodeScreen({super.key, required this.profile});
 
@@ -36,7 +36,7 @@ class _QrCodeScreenState extends ConsumerState<QrCodeScreen> {
   Future<void> _loadQrCode() async {
     setState(() => _isLoading = true);
     try {
-      final service = ref.read(barberServiceProvider);
+      final service = ref.read(salonServiceProvider);
       final qrData = await service.getQrCode();
       if (mounted) {
         setState(() {

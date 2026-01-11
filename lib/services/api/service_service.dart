@@ -12,7 +12,7 @@ class ServiceService {
 
   Future<List<ServiceDto>> getServices() async {
     try {
-      final response = await _dio.get('/barber/services');
+      final response = await _dio.get('/salon/services');
       
       // Validar que la respuesta sea JSON
       if (response.data is String && (response.data as String).trim().startsWith('<!DOCTYPE')) {
@@ -54,7 +54,7 @@ class ServiceService {
         data['durationMinutes'] = durationMinutes;
       }
       final response = await _dio.post(
-        '/barber/services',
+        '/salon/services',
         data: data,
       );
       return ServiceDto.fromJson(response.data);
@@ -80,7 +80,7 @@ class ServiceService {
       if (isActive != null) body['isActive'] = isActive;
 
       final response = await _dio.put(
-        '/barber/services/$id',
+        '/salon/services/$id',
         data: body,
       );
       return ServiceDto.fromJson(response.data);
@@ -93,7 +93,7 @@ class ServiceService {
 
   Future<void> deleteService(int id) async {
     try {
-      await _dio.delete('/barber/services/$id');
+      await _dio.delete('/salon/services/$id');
     } on DioException catch (e) {
       rethrow;
     } catch (e) {

@@ -1,4 +1,4 @@
-# BarbeNic
+# GlowNic
 
 A new Flutter project.
 

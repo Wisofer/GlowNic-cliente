@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../services/api/barber_service.dart';
+import '../../services/api/salon_service.dart';
 import '../../services/api/employee_auth_service.dart';
 import '../../utils/role_helper.dart';
 
@@ -51,7 +51,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       final next = _newPasswordController.text.trim();
 
       if (RoleHelper.isBarber(ref)) {
-        final service = ref.read(barberServiceProvider);
+        final service = ref.read(salonServiceProvider);
         await service.changePassword(
           currentPassword: current,
           newPassword: next,

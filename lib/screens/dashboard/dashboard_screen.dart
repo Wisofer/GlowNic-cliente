@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
-import '../../models/dashboard_barber.dart';
-import '../../services/api/barber_service.dart';
+import '../../models/dashboard_salon.dart';
+import '../../services/api/salon_service.dart';
 import '../../utils/money_formatter.dart';
 import '../../utils/role_helper.dart';
 
@@ -25,7 +25,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class DashboardScreenState extends ConsumerState<DashboardScreen> {
-  BarberDashboardDto? _dashboard;
+  SalonDashboardDto? _dashboard;
   bool _isLoading = true;
   String? _errorMessage;
   DateTime? _lastRefresh;
@@ -64,7 +64,7 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
       _errorMessage = null;
     });
     try {
-      final service = ref.read(barberServiceProvider);
+      final service = ref.read(salonServiceProvider);
       final dashboard = await service.getDashboard();
       if (mounted) {
         setState(() {

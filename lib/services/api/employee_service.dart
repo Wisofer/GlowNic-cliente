@@ -8,10 +8,10 @@ class EmployeeService {
 
   EmployeeService(this._dio);
 
-  /// Obtener todos los trabajadores del barbero dueño
+  /// Obtener todos los trabajadores del dueño del salón
   Future<List<EmployeeDto>> getEmployees() async {
     try {
-      final response = await _dio.get('/barber/employees');
+      final response = await _dio.get('/salon/employees');
       
       if (response.data is String && (response.data as String).trim().startsWith('<!DOCTYPE')) {
         throw DioException(
@@ -39,7 +39,7 @@ class EmployeeService {
   /// Obtener un trabajador por ID
   Future<EmployeeDto> getEmployeeById(int id) async {
     try {
-      final response = await _dio.get('/barber/employees/$id');
+      final response = await _dio.get('/salon/employees/$id');
       
       if (response.data is String && (response.data as String).trim().startsWith('<!DOCTYPE')) {
         throw DioException(
@@ -62,7 +62,7 @@ class EmployeeService {
   Future<EmployeeDto> createEmployee(CreateEmployeeRequest request) async {
     try {
       final response = await _dio.post(
-        '/barber/employees',
+        '/salon/employees',
         data: request.toJson(),
       );
       
@@ -78,7 +78,7 @@ class EmployeeService {
   Future<EmployeeDto> updateEmployee(int id, UpdateEmployeeRequest request) async {
     try {
       final response = await _dio.put(
-        '/barber/employees/$id',
+        '/salon/employees/$id',
         data: request.toJson(),
       );
       
@@ -93,7 +93,7 @@ class EmployeeService {
   /// Eliminar (desactivar) un trabajador
   Future<void> deleteEmployee(int id) async {
     try {
-      final response = await _dio.delete('/barber/employees/$id');
+      final response = await _dio.delete('/salon/employees/$id');
     } on DioException catch (e) {
       rethrow;
     } catch (e) {

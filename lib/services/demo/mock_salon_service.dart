@@ -1,18 +1,18 @@
-import '../../models/barber.dart';
-import '../../models/dashboard_barber.dart';
+import '../../models/salon.dart';
+import '../../models/dashboard_salon.dart';
 import '../../models/finance.dart';
 import 'mock_data.dart';
 
-/// Servicio mock de barbero para modo demo
-class MockBarberService {
-  Future<BarberDashboardDto> getDashboard() async {
+/// Servicio mock de dueño para modo demo
+class MockSalonService {
+  Future<SalonDashboardDto> getDashboard() async {
     await Future.delayed(const Duration(milliseconds: 800));
     return MockData.mockDashboard;
   }
 
-  Future<BarberDto> getProfile() async {
+  Future<SalonDto> getProfile() async {
     await Future.delayed(const Duration(milliseconds: 500));
-    return MockData.mockBarberProfile;
+    return MockData.mockSalonProfile;
   }
 
   Future<FinanceSummaryDto> getFinanceSummary({
@@ -32,15 +32,15 @@ class MockBarberService {
     );
   }
 
-  Future<BarberDto> updateProfile({
+  Future<SalonDto> updateProfile({
     String? name,
     String? businessName,
     String? phone,
   }) async {
     await Future.delayed(const Duration(milliseconds: 600));
     
-    final existing = MockData.mockBarberProfile;
-    return BarberDto(
+    final existing = MockData.mockSalonProfile;
+    return SalonDto(
       id: existing.id,
       name: name ?? existing.name,
       businessName: businessName ?? existing.businessName,
@@ -61,4 +61,3 @@ class MockBarberService {
     };
   }
 }
-

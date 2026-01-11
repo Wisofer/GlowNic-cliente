@@ -4,7 +4,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
 import '../../models/finance.dart';
-import '../../services/api/barber_service.dart';
+import '../../services/api/salon_service.dart';
 import '../../services/api/employee_finance_service.dart';
 import '../../utils/money_formatter.dart';
 import '../../utils/role_helper.dart';
@@ -92,7 +92,7 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> {
       _errorMessage = null;
     });
     try {
-      final service = ref.read(barberServiceProvider);
+      final service = ref.read(salonServiceProvider);
       final summary = await service.getFinanceSummary();
       if (mounted) {
         setState(() {

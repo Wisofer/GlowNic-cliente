@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../models/barber.dart';
+import '../../../models/salon.dart';
 import '../edit_profile_screen.dart';
 
 class ProfileHeader extends StatelessWidget {
-  final BarberDto profile;
+  final SalonDto profile;
   final VoidCallback onProfileUpdated;
   final Color textColor;
   final Color mutedColor;

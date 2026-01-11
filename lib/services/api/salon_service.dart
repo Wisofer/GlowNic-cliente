@@ -1,21 +1,21 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/barber.dart';
-import '../../models/dashboard_barber.dart';
+import '../../models/salon.dart';
+import '../../models/dashboard_salon.dart';
 import '../../models/finance.dart';
 import '../../models/auth.dart';
 import '../../providers/providers.dart';
 import '../../providers/auth_provider.dart';
-import '../demo/mock_barber_service.dart';
+import '../demo/mock_salon_service.dart';
 
-class BarberService {
+class SalonService {
   final Dio _dio;
 
-  BarberService(this._dio);
+  SalonService(this._dio);
 
-  Future<BarberDashboardDto> getDashboard() async {
+  Future<SalonDashboardDto> getDashboard() async {
     try {
-      final response = await _dio.get('/barber/dashboard');
+      final response = await _dio.get('/salon/dashboard');
       
       // Validar que la respuesta sea JSON
       if (response.data is String && (response.data as String).trim().startsWith('<!DOCTYPE')) {
@@ -27,7 +27,7 @@ class BarberService {
         );
       }
       
-      return BarberDashboardDto.fromJson(response.data);
+      return SalonDashboardDto.fromJson(response.data);
     } on DioException catch (e) {
       if (e.response?.data is String && (e.response!.data as String).contains('<!DOCTYPE')) {
         throw Exception('Sesión expirada. Por favor, inicia sesión nuevamente.');
@@ -38,9 +38,9 @@ class BarberService {
     }
   }
 
-  Future<BarberDto> getProfile() async {
+  Future<SalonDto> getProfile() async {
     try {
-      final response = await _dio.get('/barber/profile');
+      final response = await _dio.get('/salon/profile');
       
       // Validar que la respuesta sea JSON
       if (response.data is String && (response.data as String).trim().startsWith('<!DOCTYPE')) {
@@ -52,7 +52,7 @@ class BarberService {
         );
       }
       
-      return BarberDto.fromJson(response.data);
+      return SalonDto.fromJson(response.data);
     } on DioException catch (e) {
       if (e.response?.data is String && (e.response!.data as String).contains('<!DOCTYPE')) {
         throw Exception('Sesión expirada. Por favor, inicia sesión nuevamente.');
@@ -63,24 +63,24 @@ class BarberService {
     }
   }
 
-  Future<BarberDto> updateProfile({
+  Future<SalonDto> updateProfile({
     required String name,
     String? businessName,
     required String phone,
   }) async {
     final response = await _dio.put(
-      '/barber/profile',
+      '/salon/profile',
       data: {
         'name': name,
         'businessName': businessName,
         'phone': phone,
       },
     );
-    return BarberDto.fromJson(response.data);
+    return SalonDto.fromJson(response.data);
   }
 
   Future<QrResponse> getQrCode() async {
-    final response = await _dio.get('/barber/qr-url');
+    final response = await _dio.get('/salon/qr-url');
     return QrResponse.fromJson(response.data);
   }
 
@@ -91,14 +91,22 @@ class BarberService {
     try {
       final queryParams = <String, dynamic>{};
       if (startDate != null) {
-        queryParams['startDate'] = startDate.toIso8601String();
+        // Formato DateOnly: YYYY-MM-DD
+        final year = startDate.year.toString();
+        final month = startDate.month.toString().padLeft(2, '0');
+        final day = startDate.day.toString().padLeft(2, '0');
+        queryParams['startDate'] = '$year-$month-$day';
       }
       if (endDate != null) {
-        queryParams['endDate'] = endDate.toIso8601String();
+        // Formato DateOnly: YYYY-MM-DD
+        final year = endDate.year.toString();
+        final month = endDate.month.toString().padLeft(2, '0');
+        final day = endDate.day.toString().padLeft(2, '0');
+        queryParams['endDate'] = '$year-$month-$day';
       }
 
       final response = await _dio.get(
-        '/barber/finances/summary',
+        '/salon/finances/summary',
         queryParameters: queryParams.isEmpty ? null : queryParams,
       );
       
@@ -123,14 +131,14 @@ class BarberService {
     }
   }
 
-  /// Cambiar contraseña del barbero autenticado
+  /// Cambiar contraseña del dueño autenticado
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
   }) async {
     try {
       final response = await _dio.post(
-        '/barber/change-password',
+        '/salon/change-password',
         data: {
           'currentPassword': currentPassword,
           'newPassword': newPassword,
@@ -163,7 +171,7 @@ class BarberService {
 
   Future<List<WorkingHoursDto>> getWorkingHours() async {
     try {
-      final response = await _dio.get('/barber/working-hours');
+      final response = await _dio.get('/salon/working-hours');
       
       // Validar que la respuesta sea JSON
       if (response.data is String && (response.data as String).trim().startsWith('<!DOCTYPE')) {
@@ -205,10 +213,10 @@ class BarberService {
   Future<void> updateWorkingHours(List<Map<String, dynamic>> workingHours) async {
     try {
       final requestData = {
-        'workingHours': workingHours,
+        'request': workingHours,
       };
       final response = await _dio.put(
-        '/barber/working-hours',
+        '/salon/working-hours',
         data: requestData,
       );
     } on DioException catch (e) {
@@ -219,15 +227,14 @@ class BarberService {
   }
 }
 
-final barberServiceProvider = Provider<dynamic>((ref) {
+final salonServiceProvider = Provider<dynamic>((ref) {
   final authState = ref.watch(authNotifierProvider);
   
   // Si está en modo demo, usar servicio mock
   if (authState.isDemoMode) {
-    return MockBarberService();
+    return MockSalonService();
   }
   
   final dio = ref.watch(dioProvider);
-  return BarberService(dio);
+  return SalonService(dio);
 });
-

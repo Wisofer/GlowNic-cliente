@@ -10,7 +10,7 @@ class HelpSupportService {
 
   Future<HelpSupportDto> getHelpSupport() async {
     try {
-      final response = await _dio.get('/barber/help-support');
+      final response = await _dio.get('/salon/help-support');
       
       // Validar que la respuesta sea JSON
       if (response.data is String && (response.data as String).trim().startsWith('<!DOCTYPE')) {

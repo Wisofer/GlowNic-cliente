@@ -17,17 +17,25 @@ class EmployeeReportsService {
     try {
       final queryParams = <String, dynamic>{};
       if (startDate != null) {
-        queryParams['startDate'] = startDate.toIso8601String();
+        // Formato DateOnly: YYYY-MM-DD
+        final year = startDate.year.toString();
+        final month = startDate.month.toString().padLeft(2, '0');
+        final day = startDate.day.toString().padLeft(2, '0');
+        queryParams['startDate'] = '$year-$month-$day';
       }
       if (endDate != null) {
-        queryParams['endDate'] = endDate.toIso8601String();
+        // Formato DateOnly: YYYY-MM-DD
+        final year = endDate.year.toString();
+        final month = endDate.month.toString().padLeft(2, '0');
+        final day = endDate.day.toString().padLeft(2, '0');
+        queryParams['endDate'] = '$year-$month-$day';
       }
       if (employeeId != null) {
         queryParams['employeeId'] = employeeId.toString();
       }
 
       final response = await _dio.get(
-        '/barber/reports/employees/appointments',
+        '/salon/reports/employees/appointments',
         queryParameters: queryParams.isEmpty ? null : queryParams,
       );
 
@@ -57,17 +65,25 @@ class EmployeeReportsService {
     try {
       final queryParams = <String, dynamic>{};
       if (startDate != null) {
-        queryParams['startDate'] = startDate.toIso8601String();
+        // Formato DateOnly: YYYY-MM-DD
+        final year = startDate.year.toString();
+        final month = startDate.month.toString().padLeft(2, '0');
+        final day = startDate.day.toString().padLeft(2, '0');
+        queryParams['startDate'] = '$year-$month-$day';
       }
       if (endDate != null) {
-        queryParams['endDate'] = endDate.toIso8601String();
+        // Formato DateOnly: YYYY-MM-DD
+        final year = endDate.year.toString();
+        final month = endDate.month.toString().padLeft(2, '0');
+        final day = endDate.day.toString().padLeft(2, '0');
+        queryParams['endDate'] = '$year-$month-$day';
       }
       if (employeeId != null) {
         queryParams['employeeId'] = employeeId.toString();
       }
 
       final response = await _dio.get(
-        '/barber/reports/employees/income',
+        '/salon/reports/employees/income',
         queryParameters: queryParams.isEmpty ? null : queryParams,
       );
 
@@ -97,17 +113,25 @@ class EmployeeReportsService {
     try {
       final queryParams = <String, dynamic>{};
       if (startDate != null) {
-        queryParams['startDate'] = startDate.toIso8601String();
+        // Formato DateOnly: YYYY-MM-DD
+        final year = startDate.year.toString();
+        final month = startDate.month.toString().padLeft(2, '0');
+        final day = startDate.day.toString().padLeft(2, '0');
+        queryParams['startDate'] = '$year-$month-$day';
       }
       if (endDate != null) {
-        queryParams['endDate'] = endDate.toIso8601String();
+        // Formato DateOnly: YYYY-MM-DD
+        final year = endDate.year.toString();
+        final month = endDate.month.toString().padLeft(2, '0');
+        final day = endDate.day.toString().padLeft(2, '0');
+        queryParams['endDate'] = '$year-$month-$day';
       }
       if (employeeId != null) {
         queryParams['employeeId'] = employeeId.toString();
       }
 
       final response = await _dio.get(
-        '/barber/reports/employees/expenses',
+        '/salon/reports/employees/expenses',
         queryParameters: queryParams.isEmpty ? null : queryParams,
       );
 
@@ -136,14 +160,22 @@ class EmployeeReportsService {
     try {
       final queryParams = <String, dynamic>{};
       if (startDate != null) {
-        queryParams['startDate'] = startDate.toIso8601String();
+        // Formato DateOnly: YYYY-MM-DD
+        final year = startDate.year.toString();
+        final month = startDate.month.toString().padLeft(2, '0');
+        final day = startDate.day.toString().padLeft(2, '0');
+        queryParams['startDate'] = '$year-$month-$day';
       }
       if (endDate != null) {
-        queryParams['endDate'] = endDate.toIso8601String();
+        // Formato DateOnly: YYYY-MM-DD
+        final year = endDate.year.toString();
+        final month = endDate.month.toString().padLeft(2, '0');
+        final day = endDate.day.toString().padLeft(2, '0');
+        queryParams['endDate'] = '$year-$month-$day';
       }
 
       final response = await _dio.get(
-        '/barber/reports/employees/activity',
+        '/salon/reports/employees/activity',
         queryParameters: queryParams.isEmpty ? null : queryParams,
       );
 

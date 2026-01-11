@@ -9,7 +9,7 @@ class EmployeeServiceService {
 
   EmployeeServiceService(this._dio);
 
-  /// Obtener todos los servicios del barbero dueño (solo lectura para empleados)
+  /// Obtener todos los servicios del dueño del salón (solo lectura para empleados)
   Future<List<ServiceDto>> getServices() async {
     try {
       final response = await _dio.get('/employee/services');

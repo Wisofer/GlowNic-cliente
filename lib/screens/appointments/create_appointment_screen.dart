@@ -50,7 +50,7 @@ class _CreateAppointmentScreenState extends ConsumerState<CreateAppointmentScree
       List<ServiceDto> services;
       
       // Los empleados usan el endpoint /employee/services (solo lectura)
-      // Los barberos usan el endpoint /barber/services (con permisos completos)
+      // Los dueños usan el endpoint /salon/services (con permisos completos)
       if (RoleHelper.isEmployee(ref)) {
         final employeeServiceService = ref.read(employeeServiceServiceProvider);
         services = await employeeServiceService.getServices();

@@ -10,24 +10,20 @@ class FinanceService {
 
   FinanceService(this._dio);
 
-  String _formatDateTime(DateTime dateTime) {
-    final year = dateTime.year.toString();
-    final month = dateTime.month.toString().padLeft(2, '0');
-    final day = dateTime.day.toString().padLeft(2, '0');
-    final hour = dateTime.hour.toString().padLeft(2, '0');
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-    final second = dateTime.second.toString().padLeft(2, '0');
-    return '$year-$month-${day}T$hour:$minute:$second';
-  }
-
   void _addDateFilters(Map<String, dynamic> queryParams, DateTime? startDate, DateTime? endDate) {
     if (startDate != null) {
-      final normalizedStart = DateTime(startDate.year, startDate.month, startDate.day, 0, 0, 0);
-      queryParams['startDate'] = _formatDateTime(normalizedStart);
+      // Formato DateOnly: YYYY-MM-DD
+      final year = startDate.year.toString();
+      final month = startDate.month.toString().padLeft(2, '0');
+      final day = startDate.day.toString().padLeft(2, '0');
+      queryParams['startDate'] = '$year-$month-$day';
     }
     if (endDate != null) {
-      final normalizedEnd = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
-      queryParams['endDate'] = _formatDateTime(normalizedEnd);
+      // Formato DateOnly: YYYY-MM-DD
+      final year = endDate.year.toString();
+      final month = endDate.month.toString().padLeft(2, '0');
+      final day = endDate.day.toString().padLeft(2, '0');
+      queryParams['endDate'] = '$year-$month-$day';
     }
   }
 
@@ -45,7 +41,7 @@ class FinanceService {
       _addDateFilters(queryParams, startDate, endDate);
 
       final response = await _dio.get(
-        '/barber/finances/income',
+        '/salon/finances/income',
         queryParameters: queryParams,
       );
       return TransactionsResponse.fromJson(response.data);
@@ -64,13 +60,13 @@ class FinanceService {
       final data = <String, dynamic>{
         'amount': amount,
         'description': description,
-        'date': date.toIso8601String().split('T')[0],
+        'date': date.toIso8601String(), // DateTime ISO 8601 completo
       };
       if (category != null && category.isNotEmpty) {
         data['category'] = category;
       }
       final response = await _dio.post(
-        '/barber/finances/income',
+        '/salon/finances/income',
         data: data,
       );
       return TransactionDto.fromJson(response.data);
@@ -93,7 +89,7 @@ class FinanceService {
       _addDateFilters(queryParams, startDate, endDate);
 
       final response = await _dio.get(
-        '/barber/finances/expenses',
+        '/salon/finances/expenses',
         queryParameters: queryParams,
       );
       return TransactionsResponse.fromJson(response.data);
@@ -112,13 +108,13 @@ class FinanceService {
       final data = <String, dynamic>{
         'amount': amount,
         'description': description,
-        'date': date.toIso8601String().split('T')[0],
+        'date': date.toIso8601String(), // DateTime ISO 8601 completo
       };
       if (category != null && category.isNotEmpty) {
         data['category'] = category;
       }
       final response = await _dio.post(
-        '/barber/finances/expenses',
+        '/salon/finances/expenses',
         data: data,
       );
       return TransactionDto.fromJson(response.data);
@@ -138,13 +134,13 @@ class FinanceService {
       final data = <String, dynamic>{
         'amount': amount,
         'description': description,
-        'date': date.toIso8601String().split('T')[0],
+        'date': date.toIso8601String(), // DateTime ISO 8601 completo
       };
       if (category != null && category.isNotEmpty) {
         data['category'] = category;
       }
       final response = await _dio.put(
-        '/barber/finances/expenses/$id',
+        '/salon/finances/expenses/$id',
         data: data,
       );
       return TransactionDto.fromJson(response.data);
@@ -155,7 +151,7 @@ class FinanceService {
 
   Future<void> deleteExpense(int id) async {
     try {
-      await _dio.delete('/barber/finances/expenses/$id');
+      await _dio.delete('/salon/finances/expenses/$id');
     } on DioException {
       rethrow;
     }
@@ -163,7 +159,7 @@ class FinanceService {
 
   Future<List<String>> getCategories() async {
     try {
-      final response = await _dio.get('/barber/finances/categories');
+      final response = await _dio.get('/salon/finances/categories');
       return (response.data as List).map((e) => e.toString()).toList();
     } on DioException {
       rethrow;

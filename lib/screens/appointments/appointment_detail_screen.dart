@@ -211,7 +211,7 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
       List<ServiceDto> services;
       
       // Los empleados usan el endpoint /employee/services (solo lectura)
-      // Los barberos usan el endpoint /barber/services (con permisos completos)
+      // Los dueños usan el endpoint /salon/services (con permisos completos)
       if (RoleHelper.isEmployee(ref)) {
         final employeeServiceService = ref.read(employeeServiceServiceProvider);
         services = await employeeServiceService.getServices();
@@ -486,7 +486,7 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
 
   Future<void> _sendWhatsAppMessage() async {
     try {
-      // Solo Barber puede enviar WhatsApp (requiere perfil del barbero)
+      // Solo el dueño puede enviar WhatsApp (requiere perfil del salón)
       if (RoleHelper.isEmployee(ref)) {
         throw Exception('Los trabajadores no pueden enviar mensajes de WhatsApp');
       }
@@ -944,7 +944,7 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
                           : null;
                       
                       // Para empleados: mostrar acciones si la cita está pendiente (sin asignar) o asignada a ellos
-                      // Para barberos: mostrar acciones siempre
+                      // Para dueños: mostrar acciones siempre
                       final canShowActions = isBarber || 
                           (isEmployee && (_appointment.employeeId == null || 
                            _appointment.isAssignedTo(currentEmployeeId)));

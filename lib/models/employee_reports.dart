@@ -57,7 +57,7 @@ class EmployeeAppointmentStats {
   factory EmployeeAppointmentStats.fromJson(Map<String, dynamic> json) {
     return EmployeeAppointmentStats(
       employeeId: json['employeeId'] is String ? int.tryParse(json['employeeId']) : json['employeeId'] as int?,
-      employeeName: json['employeeName']?.toString() ?? 'Barbero (Dueño)',
+      employeeName: json['employeeName']?.toString() ?? 'Dueño del Salón',
       completed: json['completed'] ?? 0,
       pending: json['pending'] ?? 0,
       confirmed: json['confirmed'] ?? 0,
@@ -122,7 +122,7 @@ class EmployeeIncomeStats {
   factory EmployeeIncomeStats.fromJson(Map<String, dynamic> json) {
     return EmployeeIncomeStats(
       employeeId: json['employeeId'] is String ? int.tryParse(json['employeeId']) : json['employeeId'] as int?,
-      employeeName: json['employeeName']?.toString() ?? 'Barbero (Dueño)',
+      employeeName: json['employeeName']?.toString() ?? 'Dueño del Salón',
       totalIncome: (json['totalIncome'] ?? 0).toDouble(),
       count: json['count'] ?? 0,
       fromAppointments: (json['fromAppointments'] ?? 0).toDouble(),
@@ -190,7 +190,7 @@ class EmployeeExpenseStats {
 
     return EmployeeExpenseStats(
       employeeId: json['employeeId'] is String ? int.tryParse(json['employeeId']) : json['employeeId'] as int?,
-      employeeName: json['employeeName']?.toString() ?? 'Barbero (Dueño)',
+      employeeName: json['employeeName']?.toString() ?? 'Dueño del Salón',
       totalExpenses: (json['totalExpenses'] ?? 0).toDouble(),
       count: json['count'] ?? 0,
       categories: categoriesMap,
@@ -257,7 +257,7 @@ class EmployeeActivityStats {
   factory EmployeeActivityStats.fromJson(Map<String, dynamic> json) {
     return EmployeeActivityStats(
       employeeId: json['employeeId'] is String ? int.tryParse(json['employeeId']) : json['employeeId'] as int?,
-      employeeName: json['employeeName']?.toString() ?? 'Barbero (Dueño)',
+      employeeName: json['employeeName']?.toString() ?? 'Dueño del Salón',
       email: json['email']?.toString() ?? '',
       isActive: json['isActive'] ?? true,
       appointmentsCompleted: json['appointmentsCompleted'] ?? 0,
@@ -323,7 +323,7 @@ class TopPerformerDto {
   factory TopPerformerDto.fromJson(Map<String, dynamic> json) {
     return TopPerformerDto(
       employeeId: json['employeeId'] is String ? int.tryParse(json['employeeId']) : json['employeeId'] as int?,
-      employeeName: json['employeeName']?.toString() ?? 'Barbero (Dueño)',
+      employeeName: json['employeeName']?.toString() ?? 'Dueño del Salón',
       appointmentsCompleted: json['appointmentsCompleted'] ?? 0,
       totalIncome: (json['totalIncome'] ?? 0).toDouble(),
       averagePerAppointment: (json['averagePerAppointment'] ?? 0).toDouble(),

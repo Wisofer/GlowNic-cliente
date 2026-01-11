@@ -32,27 +32,49 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   final _userFocus = FocusNode();
   final _passFocus = FocusNode();
   final _credentialsStorage = CredentialsStorage();
-  late AnimationController _animationController;
+  AnimationController? _animationController;
 
   @override
   void initState() {
     super.initState();
-    _userFocus.addListener(() => setState(() => _userFocused = _userFocus.hasFocus));
-    _passFocus.addListener(() => setState(() => _passFocused = _passFocus.hasFocus));
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
+    _userFocus.addListener(_onUserFocusChange);
+    _passFocus.addListener(_onPassFocusChange);
+    _initAnimation();
     _loadSavedCredentials();
+  }
+
+  void _initAnimation() {
+    if (mounted) {
+      _animationController = AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 2),
+      )..repeat();
+    }
+  }
+
+  void _onUserFocusChange() {
+    if (mounted) {
+      setState(() => _userFocused = _userFocus.hasFocus);
+    }
+  }
+
+  void _onPassFocusChange() {
+    if (mounted) {
+      setState(() => _passFocused = _passFocus.hasFocus);
+    }
   }
 
   @override
   void dispose() {
+    _userFocus.removeListener(_onUserFocusChange);
+    _passFocus.removeListener(_onPassFocusChange);
+    _animationController?.stop();
+    _animationController?.dispose();
+    _animationController = null;
     _userController.dispose();
     _passwordController.dispose();
     _userFocus.dispose();
     _passFocus.dispose();
-    _animationController.dispose();
     super.dispose();
   }
 
@@ -148,27 +170,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    const accentColor = Color(0xFFEC4899); // Rosa suave
+    const accentColor = Color(0xFFEC4899); // Rosa principal
+    const accentLight = Color(0xFFF472B6); // Rosa claro
+    const accentPink = Color(0xFFFFB6D9); // Rosa pastel
+    const purpleAccent = Color(0xFFD946EF); // Púrpura suave
     
     // Variables responsive
     final screenWidth = size.width;
     final screenHeight = size.height;
     final isSmallScreen = screenWidth < 360;
-    final isMediumScreen = screenWidth >= 360 && screenWidth < 600;
     
-    // Tamaños responsive
-    final titleFontSize = isSmallScreen ? 24.0 : (isMediumScreen ? 26.0 : 28.0);
-    final subtitleFontSize = isSmallScreen ? 12.0 : 14.0;
-    final horizontalPadding = isSmallScreen ? 20.0 : (isMediumScreen ? 24.0 : 32.0);
-    final topSpacing = isSmallScreen ? 20.0 : (screenHeight < 700 ? 30.0 : 40.0);
-    final fieldSpacing = isSmallScreen ? 12.0 : 16.0;
-    final buttonHeight = isSmallScreen ? 48.0 : 52.0;
-    const accentLight = Color(0xFFF472B6);
+    // Tamaños responsive - más compactos
+    final titleFontSize = isSmallScreen ? 28.0 : 32.0;
+    final subtitleFontSize = isSmallScreen ? 13.0 : 15.0;
+    final horizontalPadding = isSmallScreen ? 24.0 : 28.0;
+    final topSpacing = isSmallScreen ? 30.0 : (screenHeight < 700 ? 40.0 : 50.0);
+    final fieldSpacing = isSmallScreen ? 16.0 : 18.0;
+    final buttonHeight = isSmallScreen ? 50.0 : 54.0;
+    
     const bgColor = Color(0xFFFFF1F5);
     const cardColor = Colors.white;
     const textColor = Color(0xFF1F2937);
     const mutedColor = Color(0xFF6B7280);
-    const borderColor = Color(0xFFD1D5DB);
+    const borderColor = Color(0xFFE5E7EB);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemMovilTheme.getStatusBarStyle(false),
@@ -176,7 +200,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
         backgroundColor: bgColor,
         body: Stack(
           children: [
-            // Fondo decorativo con gradiente
+            // Fondo decorativo con gradiente suave y elegante
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
@@ -184,67 +208,104 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      accentColor.withAlpha(5),
-                      accentLight.withAlpha(10),
+                      accentPink.withAlpha(15),
+                      accentLight.withAlpha(8),
+                      purpleAccent.withAlpha(5),
                       Colors.white,
                     ],
+                    stops: const [0.0, 0.3, 0.6, 1.0],
                   ),
                 ),
               ),
             ),
 
-            // Elementos decorativos elegantes y femeninos
-            Positioned(
-              top: -50,
-              right: -50,
-              child: AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  return Transform.rotate(
-                    angle: _animationController.value * 0.1,
-                    child: Container(
-                      width: 200,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            accentColor.withAlpha(20),
-                            accentColor.withAlpha(5),
-                            Colors.transparent,
-                          ],
+            // Elementos decorativos femeninos y elegantes
+            if (_animationController != null)
+              Positioned(
+                top: -60,
+                right: -60,
+                child: AnimatedBuilder(
+                  animation: _animationController!,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      angle: _animationController!.value * 0.08,
+                      child: Container(
+                        width: 220,
+                        height: 220,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              accentColor.withAlpha(25),
+                              accentLight.withAlpha(15),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                        child: Icon(
+                          Iconsax.star1,
+                          color: accentColor.withAlpha(40),
+                          size: 90,
                         ),
                       ),
-                      child: Icon(
-                        Iconsax.star1,
-                        color: accentColor.withAlpha(30),
-                        size: 80,
-                      ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
 
+            if (_animationController != null)
+              Positioned(
+                bottom: -40,
+                left: -40,
+                child: AnimatedBuilder(
+                  animation: _animationController!,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      angle: -_animationController!.value * 0.06,
+                      child: Container(
+                        width: 180,
+                        height: 180,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              purpleAccent.withAlpha(20),
+                              accentPink.withAlpha(10),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                        child: Icon(
+                          Iconsax.heart,
+                          color: purpleAccent.withAlpha(35),
+                          size: 70,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+            // Elemento decorativo adicional - flor/estrella
             Positioned(
-              bottom: -30,
+              top: size.height * 0.15,
               left: -30,
               child: Container(
-                width: 150,
-                height: 150,
+                width: 120,
+                height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      accentLight.withAlpha(15),
+                      accentPink.withAlpha(18),
                       Colors.transparent,
                     ],
                   ),
                 ),
                 child: Icon(
-                  Iconsax.heart,
-                  color: accentLight.withAlpha(20),
-                  size: 60,
+                  Iconsax.star1,
+                  color: accentPink.withAlpha(30),
+                  size: 50,
                 ),
               ),
             ),
@@ -266,28 +327,63 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Título minimalista centrado
+                            // Logo/Icono decorativo
+                            Center(
+                              child: Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      accentColor,
+                                      accentLight,
+                                      purpleAccent,
+                                    ],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: accentColor.withAlpha(40),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Iconsax.star1,
+                                  color: Colors.white,
+                                  size: 40,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: isSmallScreen ? 24 : 28),
+                            
+                            // Título elegante y femenino
                             Text(
-                              'Bienvenida',
-                              style: GoogleFonts.inter(
+                              '¡Bienvenida!',
+                              style: GoogleFonts.poppins(
                                 fontSize: titleFontSize,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 color: textColor,
-                                letterSpacing: -0.5,
+                                letterSpacing: -0.8,
+                                height: 1.2,
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            SizedBox(height: isSmallScreen ? 4 : 6),
+                            SizedBox(height: isSmallScreen ? 6 : 8),
                             Text(
-                              'Inicia sesión para continuar',
-                              style: GoogleFonts.inter(
+                              'Inicia sesión en tu salón de belleza',
+                              style: GoogleFonts.poppins(
                                 fontSize: subtitleFontSize,
                                 color: mutedColor,
                                 fontWeight: FontWeight.w400,
+                                letterSpacing: 0.2,
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            SizedBox(height: isSmallScreen ? 20 : 28),
+                            SizedBox(height: isSmallScreen ? 28 : 32),
 
                             // Error message
                             if (_errorMessage != null) ...[
@@ -305,9 +401,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                                     Expanded(
                                       child: Text(
                                         _errorMessage!,
-                                        style: GoogleFonts.inter(
+                                        style: GoogleFonts.poppins(
                                           fontSize: 13,
                                           color: const Color(0xFFDC2626),
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     ),
@@ -397,7 +494,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                                     },
                                     child: Text(
                                       'Recordar credenciales',
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.poppins(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
                                         color: textColor,
@@ -410,45 +507,63 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
 
                             SizedBox(height: isSmallScreen ? 24 : 28),
 
-                          // Botón de login
-                          SizedBox(
+                          // Botón de login con gradiente elegante
+                          Container(
                             width: double.infinity,
-                                height: buttonHeight,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _submitForm,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: accentColor,
-                                foregroundColor: Colors.white,
-                                disabledBackgroundColor: accentColor.withAlpha(150),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                ),
+                            height: buttonHeight,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  accentColor,
+                                  accentLight,
+                                  purpleAccent,
+                                ],
                               ),
-                              child: _isLoading
-                                  ? const SizedBox(
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: accentColor.withAlpha(50),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: _isLoading ? null : _submitForm,
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  child: _isLoading
+                                      ? const SizedBox(
                                           height: 24,
                                           width: 24,
-                                      child: CircularProgressIndicator(
+                                          child: CircularProgressIndicator(
                                             strokeWidth: 2.5,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                      ),
-                                    )
-                                  : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                              'Iniciar Sesión',
-                                          style: GoogleFonts.inter(
-                                                fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                                letterSpacing: 0.5,
+                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                           ),
-                                        ),
+                                        )
+                                      : Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              'Iniciar Sesión',
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                                letterSpacing: 0.5,
+                                                color: Colors.white,
+                                              ),
+                                            ),
                                             const SizedBox(width: 10),
-                                            const Icon(Iconsax.arrow_right_3, size: 20),
-                                      ],
-                                    ),
+                                            const Icon(Iconsax.arrow_right_3, size: 20, color: Colors.white),
+                                          ],
+                                        ),
+                                ),
+                              ),
                             ),
                           ),
 
@@ -460,11 +575,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                               onTap: _isLoading ? null : _enterDemoMode,
                               child: Text(
                                 'Ver demo',
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
                                   color: _isLoading ? mutedColor.withAlpha(100) : accentColor,
                                   decoration: TextDecoration.none,
+                                  letterSpacing: 0.3,
                                 ),
                               ),
                             ),
@@ -483,9 +599,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                             spacing: isSmallScreen ? 6 : 8,
                             runSpacing: isSmallScreen ? 8 : 10,
                             children: [
-                              _buildFeatureBadge(Iconsax.calendar_2, 'Citas', accentColor, mutedColor, borderColor),
-                              _buildFeatureBadge(Iconsax.star1, 'Servicios', accentColor, mutedColor, borderColor),
-                              _buildFeatureBadge(Iconsax.wallet, 'Finanzas', accentColor, mutedColor, borderColor),
+                              _buildFeatureBadge(Iconsax.calendar_2, 'Citas', accentColor, accentLight, mutedColor, borderColor),
+                              _buildFeatureBadge(Iconsax.star1, 'Servicios', accentColor, accentLight, mutedColor, borderColor),
+                              _buildFeatureBadge(Iconsax.wallet, 'Finanzas', accentColor, accentLight, mutedColor, borderColor),
                             ],
                           ),
                           SizedBox(height: isSmallScreen ? 20 : 24),
@@ -494,9 +610,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                             children: [
                               Text(
                                 'Desarrollado por ',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.poppins(
                                   fontSize: 10,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w500,
                                   color: mutedColor.withAlpha(150),
                                   letterSpacing: 1.2,
                                 ),
@@ -529,7 +645,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                                 },
                                 child: Text(
                                   'COWIB',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
                                     color: accentColor,
@@ -584,34 +700,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
             fontWeight: FontWeight.w600,
             color: textColor,
+            letterSpacing: 0.2,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isFocused ? accentColor : borderColor.withAlpha(100),
+              color: isFocused ? accentColor : borderColor,
               width: isFocused ? 2 : 1.5,
             ),
-            color: isFocused ? accentLight.withAlpha(20) : Colors.white.withAlpha(250),
+            color: isFocused 
+                ? Colors.white 
+                : Colors.white.withAlpha(250),
             boxShadow: isFocused
                 ? [
                     BoxShadow(
-                      color: accentColor.withAlpha(15),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: accentColor.withAlpha(30),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                      spreadRadius: 0,
                     ),
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withAlpha(3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
+                      color: Colors.black.withAlpha(5),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
                   ],
           ),
@@ -621,14 +741,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             keyboardType: keyboardType,
             obscureText: obscureText,
             validator: validator,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
               fontSize: inputFontSize,
               color: textColor,
               fontWeight: FontWeight.w500,
             ),
             decoration: InputDecoration(
               hintText: hintText,
-              hintStyle: GoogleFonts.inter(
+              hintStyle: GoogleFonts.poppins(
                 fontSize: hintFontSize,
                 color: mutedColor.withAlpha(150),
               ),
@@ -655,13 +775,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildFeatureBadge(IconData icon, String label, Color accentColor, Color mutedColor, Color borderColor) {
+  Widget _buildFeatureBadge(IconData icon, String label, Color accentColor, Color accentLight, Color mutedColor, Color borderColor) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: accentColor.withAlpha(10),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accentColor.withAlpha(30)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            accentColor.withAlpha(15),
+            accentLight.withAlpha(10),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accentColor.withAlpha(40), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -670,10 +797,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           const SizedBox(width: 4),
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
               fontSize: 11,
               color: accentColor,
               fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
             ),
           ),
         ],

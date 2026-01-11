@@ -20,7 +20,7 @@ class AppointmentService {
       if (status != null) queryParams['status'] = status;
 
       final response = await _dio.get(
-        '/barber/appointments',
+        '/salon/appointments',
         queryParameters: queryParams.isEmpty ? null : queryParams,
       );
       
@@ -81,7 +81,7 @@ class AppointmentService {
         'clientPhone': clientPhone,
         'date': date,
         'time': time,
-        'status': 'Confirmed', // Las citas creadas manualmente por el barbero se crean directamente como confirmadas
+        'status': 'Confirmed', // Las citas creadas manualmente por el dueño se crean directamente como confirmadas
       };
       
       // Solo incluir serviceIds si se proporciona y no está vacío
@@ -90,7 +90,7 @@ class AppointmentService {
       }
       
       final response = await _dio.post(
-        '/barber/appointments',
+        '/salon/appointments',
         data: body,
       );
       return AppointmentDto.fromJson(response.data);
@@ -104,7 +104,7 @@ class AppointmentService {
   /// Obtener una cita específica
   Future<AppointmentDto> getAppointment(int id) async {
     try {
-      final response = await _dio.get('/barber/appointments/$id');
+      final response = await _dio.get('/salon/appointments/$id');
       
       if (response.data is String && (response.data as String).trim().startsWith('<!DOCTYPE')) {
         throw DioException(
@@ -146,7 +146,7 @@ class AppointmentService {
       }
 
       final response = await _dio.put(
-        '/barber/appointments/$id',
+        '/salon/appointments/$id',
         data: body,
       );
       return AppointmentDto.fromJson(response.data);
@@ -158,12 +158,12 @@ class AppointmentService {
   }
 
   Future<void> deleteAppointment(int id) async {
-    await _dio.delete('/barber/appointments/$id');
+    await _dio.delete('/salon/appointments/$id');
   }
 
   Future<Map<String, dynamic>> getWhatsAppUrl(int id) async {
     try {
-      final response = await _dio.get('/barber/appointments/$id/whatsapp-url');
+      final response = await _dio.get('/salon/appointments/$id/whatsapp-url');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       rethrow;
@@ -175,7 +175,7 @@ class AppointmentService {
   /// Obtener historial completo de citas (sin filtros de fecha)
   Future<List<AppointmentDto>> getHistory() async {
     try {
-      final response = await _dio.get('/barber/appointments/history');
+      final response = await _dio.get('/salon/appointments/history');
       
       if (response.data is String && (response.data as String).trim().startsWith('<!DOCTYPE')) {
         throw DioException(

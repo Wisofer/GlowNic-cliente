@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/user_profile.dart';
 import '../services/api/auth_service.dart';
-import '../services/api/barber_service.dart';
+import '../services/api/salon_service.dart';
 import '../services/storage/token_storage.dart';
 import '../utils/jwt_decoder.dart';
 import 'providers.dart';
@@ -307,7 +307,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // Primero verificar el rol desde el token
     final role = JwtDecoder.getUserRole(state.userToken!);
     
-    // Si es Employee, no intentar cargar perfil del barbero
+    // Si es Employee, no intentar cargar perfil del dueño
     if (role == 'Employee') {
       final fallback = _buildProfileFromToken(state.userToken!);
       if (fallback != null) {
@@ -318,18 +318,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
 
     try {
-      // Solo intentar obtener perfil del barbero si es rol Barber
-      final barberService = ref.read(barberServiceProvider);
-      final barberProfile = await barberService.getProfile();
+      // Solo intentar obtener perfil del dueño si es rol Barber
+      final salonService = ref.read(salonServiceProvider);
+      final salonProfile = await salonService.getProfile();
       
       final profile = UserProfile(
-        userId: barberProfile.id.toString(),
-        userName: barberProfile.email ?? '',
+        userId: salonProfile.id.toString(),
+        userName: salonProfile.email ?? '',
         role: 'Barber',
-        nombre: barberProfile.name,
+        nombre: salonProfile.name,
         apellido: '',
-        email: barberProfile.email,
-        phone: barberProfile.phone,
+        email: salonProfile.email,
+        phone: salonProfile.phone,
       );
       
       state = state.copyWith(userProfile: profile);

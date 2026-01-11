@@ -4,7 +4,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
 import '../../utils/money_formatter.dart';
-import '../../services/api/barber_service.dart';
+import '../../services/api/salon_service.dart';
 
 class QuickStatsScreen extends ConsumerStatefulWidget {
   const QuickStatsScreen({super.key});
@@ -31,7 +31,7 @@ class _QuickStatsScreenState extends ConsumerState<QuickStatsScreen> {
     });
 
     try {
-      final service = ref.read(barberServiceProvider);
+      final service = ref.read(salonServiceProvider);
       final dashboard = await service.getDashboard();
       
       final monthStats = dashboard.thisMonth;

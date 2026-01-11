@@ -36,7 +36,7 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
       List<ServiceDto> services;
       
       // Los empleados usan el endpoint /employee/services (solo lectura)
-      // Los barberos usan el endpoint /barber/services (con permisos completos)
+      // Los dueños usan el endpoint /salon/services (con permisos completos)
       if (RoleHelper.isEmployee(ref)) {
         final employeeServiceService = ref.read(employeeServiceServiceProvider);
         services = await employeeServiceService.getServices();
@@ -192,7 +192,7 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
                     ],
                   ),
                   const Spacer(),
-                  // Solo mostrar botón de crear para barberos
+                  // Solo mostrar botón de crear para dueños
                   if (RoleHelper.isBarber(ref))
                     Material(
                       color: Colors.transparent,
@@ -570,7 +570,7 @@ class _ServiceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Botones horizontales (solo para barberos)
+                // Botones horizontales (solo para dueños)
                 if (onEdit != null || onDelete != null)
                   Row(
                     mainAxisSize: MainAxisSize.min,

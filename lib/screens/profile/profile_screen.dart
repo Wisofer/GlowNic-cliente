@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
-import '../../models/barber.dart';
-import '../../services/api/barber_service.dart';
+import '../../models/salon.dart';
+import '../../services/api/salon_service.dart';
 import '../../providers/auth_provider.dart';
 import 'edit_profile_screen.dart';
 import 'qr_code_screen.dart';
@@ -31,7 +31,7 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  BarberDto? _profile;
+  SalonDto? _profile;
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -42,7 +42,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
-    // Si es Employee, no cargar perfil del barbero (no disponible)
+    // Si es Employee, no cargar perfil del dueño (no disponible)
     if (RoleHelper.isEmployee(ref)) {
       if (mounted) {
         setState(() {
@@ -58,7 +58,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _errorMessage = null;
     });
     try {
-      final service = ref.read(barberServiceProvider);
+      final service = ref.read(salonServiceProvider);
       final profile = await service.getProfile();
       if (mounted) {
         setState(() {
@@ -191,7 +191,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       return Center(child: CircularProgressIndicator(color: accentColor));
     }
 
-    // Si es Employee, mostrar perfil con mismo diseño que barbero
+    // Si es Employee, mostrar perfil con mismo diseño que dueño
     if (RoleHelper.isEmployee(ref)) {
       final authState = ref.read(authNotifierProvider);
       final userProfile = authState.userProfile;

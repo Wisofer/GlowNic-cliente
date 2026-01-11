@@ -1,6 +1,6 @@
 import 'service.dart';
 
-class BarberDto {
+class SalonDto {
   final int id;
   final String name;
   final String? businessName;
@@ -11,7 +11,7 @@ class BarberDto {
   final DateTime createdAt;
   final String? email;
 
-  BarberDto({
+  SalonDto({
     required this.id,
     required this.name,
     this.businessName,
@@ -23,7 +23,7 @@ class BarberDto {
     this.email,
   });
 
-  factory BarberDto.fromJson(Map<String, dynamic> json) => BarberDto(
+  factory SalonDto.fromJson(Map<String, dynamic> json) => SalonDto(
         id: json['id'],
         name: json['name'],
         businessName: json['businessName'],
@@ -48,7 +48,7 @@ class BarberDto {
       };
 }
 
-class BarberPublicDto {
+class SalonPublicDto {
   final int id;
   final String name;
   final String? businessName;
@@ -57,7 +57,7 @@ class BarberPublicDto {
   final List<ServiceDto> services;
   final List<WorkingHoursDto> workingHours;
 
-  BarberPublicDto({
+  SalonPublicDto({
     required this.id,
     required this.name,
     this.businessName,
@@ -67,7 +67,7 @@ class BarberPublicDto {
     required this.workingHours,
   });
 
-  factory BarberPublicDto.fromJson(Map<String, dynamic> json) => BarberPublicDto(
+  factory SalonPublicDto.fromJson(Map<String, dynamic> json) => SalonPublicDto(
         id: json['id'],
         name: json['name'],
         businessName: json['businessName'],
@@ -172,4 +172,3 @@ class WorkingHoursDto {
     return dayMap[dayName] ?? 0;
   }
 }
-

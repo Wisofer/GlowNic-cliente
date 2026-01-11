@@ -55,7 +55,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       const employeeMapping = [1, 2, 3, 4];
       return employeeMapping[visibleIndex];
     } else {
-      // Para barberos: índice visible = índice real
+      // Para dueños: índice visible = índice real
       return visibleIndex;
     }
   }

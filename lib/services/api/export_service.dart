@@ -22,7 +22,7 @@ class ExportService {
       if (endDate != null) queryParams['endDate'] = endDate;
 
       final response = await _dio.get(
-        '/barber/export/appointments',
+        '/salon/export/appointments',
         queryParameters: queryParams,
         options: Options(
           responseType: ResponseType.bytes,
@@ -97,7 +97,7 @@ class ExportService {
       if (endDate != null) queryParams['endDate'] = endDate;
 
       final response = await _dio.get(
-        '/barber/export/finances',
+        '/salon/export/finances',
         queryParameters: queryParams,
         options: Options(
           responseType: ResponseType.bytes,
@@ -162,7 +162,7 @@ class ExportService {
   Future<File> exportClients({String format = 'csv'}) async {
     try {
       final response = await _dio.get(
-        '/barber/export/clients',
+        '/salon/export/clients',
         queryParameters: {'format': format},
         options: Options(
           responseType: ResponseType.bytes,
@@ -227,7 +227,7 @@ class ExportService {
   Future<File> exportBackup() async {
     try {
       final response = await _dio.get(
-        '/barber/export/backup',
+        '/salon/export/backup',
         options: Options(
           responseType: ResponseType.bytes,
         ),

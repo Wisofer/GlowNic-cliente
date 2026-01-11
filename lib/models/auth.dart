@@ -1,4 +1,4 @@
-import 'barber.dart';
+import 'salon.dart';
 
 class LoginRequest {
   final String email;
@@ -37,7 +37,7 @@ class UserDto {
   final int id;
   final String email;
   final String role;
-  final BarberDto? barber;
+  final SalonDto? barber;
 
   UserDto({
     required this.id,
@@ -50,7 +50,7 @@ class UserDto {
         id: json['id'],
         email: json['email'],
         role: json['role'],
-        barber: json['barber'] != null ? BarberDto.fromJson(json['barber']) : null,
+        barber: json['barber'] != null ? SalonDto.fromJson(json['barber']) : null,
       );
 }
 

@@ -1,9 +1,9 @@
-import 'barber.dart';
+import 'salon.dart';
 import 'appointment.dart';
 import 'employee_reports.dart';
 
-class BarberDashboardDto {
-  final BarberDto barber;
+class SalonDashboardDto {
+  final SalonDto salon;
   final TodayStats today;
   final WeekStats thisWeek;
   final MonthStats thisMonth;
@@ -11,8 +11,8 @@ class BarberDashboardDto {
   final List<AppointmentDto> upcomingAppointments;
   final EmployeeStatsDto? employeeStats;
 
-  BarberDashboardDto({
-    required this.barber,
+  SalonDashboardDto({
+    required this.salon,
     required this.today,
     required this.thisWeek,
     required this.thisMonth,
@@ -21,8 +21,8 @@ class BarberDashboardDto {
     this.employeeStats,
   });
 
-  factory BarberDashboardDto.fromJson(Map<String, dynamic> json) => BarberDashboardDto(
-        barber: BarberDto.fromJson(json['barber']),
+  factory SalonDashboardDto.fromJson(Map<String, dynamic> json) => SalonDashboardDto(
+        salon: SalonDto.fromJson(json['salon'] ?? json['barber']),
         today: TodayStats.fromJson(json['today']),
         thisWeek: WeekStats.fromJson(json['thisWeek']),
         thisMonth: MonthStats.fromJson(json['thisMonth']),
@@ -120,4 +120,3 @@ class MonthStats {
         averagePerClient: (json['averagePerClient'] ?? 0).toDouble(),
       );
 }
-
