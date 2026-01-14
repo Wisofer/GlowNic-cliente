@@ -37,20 +37,21 @@ class UserDto {
   final int id;
   final String email;
   final String role;
-  final SalonDto? barber;
+  final SalonDto? salon; // Compatible con 'barber' del backend
 
   UserDto({
     required this.id,
     required this.email,
     required this.role,
-    this.barber,
+    this.salon,
   });
 
   factory UserDto.fromJson(Map<String, dynamic> json) => UserDto(
         id: json['id'],
         email: json['email'],
         role: json['role'],
-        barber: json['barber'] != null ? SalonDto.fromJson(json['barber']) : null,
+        salon: json['salon'] != null ? SalonDto.fromJson(json['salon']) : 
+               json['barber'] != null ? SalonDto.fromJson(json['barber']) : null, // Compatibilidad con backend antiguo
       );
 }
 

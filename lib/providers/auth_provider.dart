@@ -218,16 +218,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       // Crear perfil desde los datos del login
       final user = loginResponse.user;
-      final barber = user.barber;
+      final salon = user.salon; // Usar 'salon' en lugar de 'barber'
       
       final profile = UserProfile(
         userId: user.id.toString(),
         userName: user.email,
         role: user.role,
-        nombre: barber?.name ?? user.email,
+        nombre: salon?.name ?? user.email,
         apellido: '',
         email: user.email,
-        phone: barber?.phone,
+        phone: salon?.phone,
       );
 
       state = state.copyWith(

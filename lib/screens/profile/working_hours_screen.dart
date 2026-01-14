@@ -123,11 +123,25 @@ class _WorkingHoursScreenState extends ConsumerState<WorkingHoursScreen> {
       final service = ref.read(salonServiceProvider);
       
       // Preparar datos para enviar
-      final workingHours = _schedules.values.map((schedule) => {
-        'dayOfWeek': schedule.dayOfWeek,
-        'startTime': schedule.startTime,
-        'endTime': schedule.endTime,
-        'isActive': schedule.isActive,
+      // IMPORTANTE según documentación del backend:
+      // - dayOfWeek: NÚMERO 0-6 (0=Domingo, 1=Lunes, ..., 6=Sábado)
+      // - startTime/endTime: Formato "HH:mm" (NO "HH:mm:ss")
+      // - isActive: Boolean (true/false)
+      final workingHours = _schedules.values.map((schedule) {
+        // Asegurar formato HH:mm (sin segundos)
+        final startTime = schedule.startTime.length == 8 
+            ? schedule.startTime.substring(0, 5)  // Quitar :00 si tiene segundos
+            : schedule.startTime;
+        final endTime = schedule.endTime.length == 8 
+            ? schedule.endTime.substring(0, 5)  // Quitar :00 si tiene segundos
+            : schedule.endTime;
+        
+        return {
+          'dayOfWeek': schedule.dayOfWeek, // Backend espera 0-6 (0=Domingo, 1=Lunes, etc.)
+          'startTime': startTime,           // Formato "HH:mm"
+          'endTime': endTime,               // Formato "HH:mm"
+          'isActive': schedule.isActive,    // Boolean
+        };
       }).toList().cast<Map<String, dynamic>>();
 
       await service.updateWorkingHours(workingHours);
@@ -147,7 +161,13 @@ class _WorkingHoursScreenState extends ConsumerState<WorkingHoursScreen> {
       
       if (e.response?.data != null) {
         if (e.response!.data is Map<String, dynamic>) {
-          message = e.response!.data['message'] ?? message;
+          final errorData = e.response!.data as Map<String, dynamic>;
+          message = errorData['message'] ?? message;
+          
+          if (errorData.containsKey('errors')) {
+            final errors = errorData['errors'];
+            message = 'Errores de validación: $errors';
+          }
         } else if (e.response!.data is String) {
           message = e.response!.data as String;
         }
@@ -157,6 +177,8 @@ class _WorkingHoursScreenState extends ConsumerState<WorkingHoursScreen> {
         message = 'Endpoint no encontrado. Verifica la configuración del servidor.';
       } else if (statusCode == 400) {
         message = 'Datos inválidos. Verifica los horarios ingresados.';
+      } else if (statusCode == 401) {
+        message = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
       }
       
       
@@ -169,7 +191,7 @@ class _WorkingHoursScreenState extends ConsumerState<WorkingHoursScreen> {
           ),
         );
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

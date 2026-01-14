@@ -137,7 +137,7 @@ class SalonService {
     required String newPassword,
   }) async {
     try {
-      final response = await _dio.post(
+      await _dio.post(
         '/salon/change-password',
         data: {
           'currentPassword': currentPassword,
@@ -212,16 +212,16 @@ class SalonService {
 
   Future<void> updateWorkingHours(List<Map<String, dynamic>> workingHours) async {
     try {
+      // CORRECCIÓN: El backend espera 'workingHours', NO 'request'
       final requestData = {
-        'request': workingHours,
+        'workingHours': workingHours,
       };
-      final response = await _dio.put(
+      
+      await _dio.put(
         '/salon/working-hours',
         data: requestData,
       );
-    } on DioException catch (e) {
-      rethrow;
-    } catch (e) {
+    } on DioException {
       rethrow;
     }
   }

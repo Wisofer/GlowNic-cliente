@@ -106,6 +106,11 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
           await _showWhatsAppDialog();
         }
         
+        // Si se canceló la cita, ofrecer enviar WhatsApp de rechazo (solo para Barber)
+        if (newStatus == 'Cancelled' && RoleHelper.isBarber(ref)) {
+          await _showWhatsAppRejectDialog();
+        }
+        
         // Notificar que hubo cambios para refrescar otras pantallas
         Navigator.pop(context, true);
       }
@@ -249,10 +254,12 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
             ],
           ),
         );
-        return result == true ? [] : null;
+        return result == true ? <int>[] : null;
       }
 
+      // Mantener el estado fuera del builder para que persista entre reconstrucciones
       final selectedServiceIds = <int>[];
+      bool _isDialogClosing = false; // Flag para evitar múltiples pops
 
       return await showDialog<List<int>>(
         context: context,
@@ -372,18 +379,35 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () => Navigator.pop(context, null),
+                    onPressed: () {
+                      if (!_isDialogClosing && Navigator.canPop(context)) {
+                        _isDialogClosing = true;
+                        Navigator.pop(context, null);
+                      }
+                    },
                     child: Text('Cancelar', style: GoogleFonts.inter()),
                   ),
                   TextButton(
-                    onPressed: () => Navigator.pop(context, []),
+                    onPressed: () {
+                      if (!_isDialogClosing && Navigator.canPop(context)) {
+                        _isDialogClosing = true;
+                        // Especificar el tipo explícitamente como List<int>
+                        Navigator.pop(context, <int>[]);
+                      }
+                    },
                     child: Text(
                       'Completar sin servicios',
                       style: GoogleFonts.inter(color: mutedColor),
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: () => Navigator.pop(context, selectedServiceIds),
+                    onPressed: () {
+                      if (!_isDialogClosing && Navigator.canPop(context)) {
+                        _isDialogClosing = true;
+                        // Crear una copia de la lista para evitar problemas de referencia
+                        Navigator.pop(context, List<int>.from(selectedServiceIds));
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: accentColor,
                       foregroundColor: Colors.white,
@@ -427,7 +451,7 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
           ],
         ),
       );
-      return result == true ? [] : null;
+      return result == true ? <int>[] : null;
     }
   }
 
@@ -493,6 +517,135 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
 
       final service = ref.read(appointmentServiceProvider);
       final whatsappData = await service.getWhatsAppUrl(_appointment.id);
+      
+      final url = whatsappData['url'] as String;
+      final uri = Uri.parse(url);
+      
+      // Intentar abrir WhatsApp directamente
+      try {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+      } catch (e) {
+        // Si falla con externalApplication, intentar con platformDefault
+        try {
+          await launchUrl(uri, mode: LaunchMode.platformDefault);
+        } catch (e2) {
+          // Si también falla, intentar con la URL web de WhatsApp
+          if (url.contains('whatsapp://')) {
+            // Convertir whatsapp:// a https://wa.me/
+            final phoneMatch = RegExp(r'phone=([0-9]+)').firstMatch(url);
+            final textMatch = RegExp(r'text=([^&]+)').firstMatch(url);
+            
+            if (phoneMatch != null) {
+              String webUrl = 'https://wa.me/${phoneMatch.group(1)}';
+              if (textMatch != null) {
+                final encodedText = Uri.encodeComponent(textMatch.group(1)!);
+                webUrl += '?text=$encodedText';
+              }
+              
+              try {
+                await launchUrl(
+                  Uri.parse(webUrl),
+                  mode: LaunchMode.externalApplication,
+                );
+                return;
+              } catch (e3) {
+                // Continuar con el error original
+              }
+            }
+          }
+          
+          // Si todo falla, mostrar error
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('No se pudo abrir WhatsApp. Asegúrate de tener WhatsApp instalado.'),
+                backgroundColor: const Color(0xFFEF4444),
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al obtener URL de WhatsApp: ${e.toString()}'),
+            backgroundColor: const Color(0xFFEF4444),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Mostrar diálogo para enviar WhatsApp de rechazo
+  Future<void> _showWhatsAppRejectDialog() async {
+    final sendWhatsApp = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text(
+                '💬',
+                style: TextStyle(fontSize: 26),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Notificar rechazo',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        content: const Text(
+          '¿Deseas enviar un mensaje de disculpa al cliente por WhatsApp?',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF25D366),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Enviar'),
+          ),
+        ],
+      ),
+    );
+
+    if (sendWhatsApp == true) {
+      await _sendWhatsAppRejectMessage();
+    }
+  }
+
+  /// Enviar mensaje de WhatsApp de rechazo
+  Future<void> _sendWhatsAppRejectMessage() async {
+    try {
+      // Solo el dueño puede enviar WhatsApp (requiere perfil del salón)
+      if (RoleHelper.isEmployee(ref)) {
+        throw Exception('Los trabajadores no pueden enviar mensajes de WhatsApp');
+      }
+
+      final service = ref.read(appointmentServiceProvider);
+      final whatsappData = await service.getWhatsAppUrlReject(_appointment.id);
       
       final url = whatsappData['url'] as String;
       final uri = Uri.parse(url);
@@ -851,12 +1004,16 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Text(
-                                                service.name,
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: textColor,
+                                              Flexible(
+                                                child: Text(
+                                                  service.name,
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: textColor,
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  maxLines: 1,
                                                 ),
                                               ),
                                               const SizedBox(width: 6),

@@ -139,14 +139,17 @@ class WorkingHoursDto {
         endTime = endTime.substring(0, 5);
       }
       
+      // El backend puede devolver 'isAvailable' o 'isActive'
+      final isActive = json['isAvailable'] ?? json['isActive'] ?? false;
+      
       return WorkingHoursDto(
         id: id,
         dayOfWeek: dayOfWeek,
         startTime: startTime,
         endTime: endTime,
-        isActive: json['isActive'] ?? false,
+        isActive: isActive,
       );
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }

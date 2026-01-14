@@ -53,11 +53,9 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/logo1.png
-    - assets/images/logo2.png
-    - assets/images/logo3.png
     - assets/images/logobarbe.png
     - assets/images/glownic.png
+    - assets/images/logo4.png
     - assets/images/logo5.png
     - assets/audios/success.mp3
     - assets/audios/error.mp3
@@ -69,3 +67,4 @@ flutter_launcher_icons:
   min_sdk_android: 21
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/images/glownic.png"
+  remove_alpha_ios: true

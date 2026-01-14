@@ -94,9 +94,7 @@ class AppointmentService {
         data: body,
       );
       return AppointmentDto.fromJson(response.data);
-    } on DioException catch (e) {
-      rethrow;
-    } catch (e) {
+    } on DioException {
       rethrow;
     }
   }
@@ -116,9 +114,7 @@ class AppointmentService {
       }
       
       return AppointmentDto.fromJson(response.data as Map<String, dynamic>);
-    } on DioException catch (e) {
-      rethrow;
-    } catch (e) {
+    } on DioException {
       rethrow;
     }
   }
@@ -150,9 +146,7 @@ class AppointmentService {
         data: body,
       );
       return AppointmentDto.fromJson(response.data);
-    } on DioException catch (e) {
-      rethrow;
-    } catch (e) {
+    } on DioException {
       rethrow;
     }
   }
@@ -165,9 +159,17 @@ class AppointmentService {
     try {
       final response = await _dio.get('/salon/appointments/$id/whatsapp-url');
       return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
+    } on DioException {
       rethrow;
-    } catch (e) {
+    }
+  }
+
+  /// Obtener URL de WhatsApp para rechazo/cancelación de cita
+  Future<Map<String, dynamic>> getWhatsAppUrlReject(int id) async {
+    try {
+      final response = await _dio.get('/salon/appointments/$id/whatsapp-url-reject');
+      return response.data as Map<String, dynamic>;
+    } on DioException {
       rethrow;
     }
   }
@@ -207,8 +209,6 @@ class AppointmentService {
         return [];
       }
       
-      rethrow;
-    } catch (e) {
       rethrow;
     }
   }

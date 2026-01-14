@@ -1,6 +1,6 @@
 # GlowNic
 
-A new Flutter project.
+Sistema de gestión profesional para salones de belleza.
 
 ## Getting Started
 
