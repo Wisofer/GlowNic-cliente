@@ -79,21 +79,89 @@ class NotificationLogDto {
     }
   }
 
-  /// Obtener título de la notificación
+  /// Obtener título del payload
   String get title {
     final data = parsedPayload;
-    return data['title'] ?? data['notification']?['title'] ?? 'Notificación';
+    return data['title'] ?? data['notification']?['title'] ?? '';
   }
 
-  /// Obtener cuerpo de la notificación
+  /// Obtener cuerpo del payload
   String get body {
     final data = parsedPayload;
-    return data['body'] ?? data['notification']?['body'] ?? data['message'] ?? '';
+    return data['body'] ?? data['notification']?['body'] ?? '';
   }
 
   /// Obtener tipo de notificación
   String get type {
     final data = parsedPayload;
-    return data['type'] ?? data['route'] ?? 'unknown';
+    return data['type'] ?? data['data']?['type'] ?? '';
+  }
+}
+
+class NotificationTemplateDto {
+  final int id;
+  final String type;
+  final String title;
+  final String body;
+
+  NotificationTemplateDto({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.body,
+  });
+
+  factory NotificationTemplateDto.fromJson(Map<String, dynamic> json) {
+    return NotificationTemplateDto(
+      id: json['id'] ?? json['notificationTemplate']?['id'] ?? 0,
+      type: json['type'] ?? json['notificationTemplate']?['type'] ?? '',
+      title: json['title'] ?? json['notificationTemplate']?['title'] ?? '',
+      body: json['body'] ?? json['notificationTemplate']?['body'] ?? '',
+    );
+  }
+}
+
+class NotificationLogResponse {
+  final NotificationLogDto notificationLog;
+  final NotificationTemplateDto? notificationTemplate;
+
+  NotificationLogResponse({
+    required this.notificationLog,
+    this.notificationTemplate,
+  });
+
+  factory NotificationLogResponse.fromJson(Map<String, dynamic> json) {
+    return NotificationLogResponse(
+      notificationLog: NotificationLogDto.fromJson(json),
+      notificationTemplate: json['notificationTemplate'] != null
+          ? NotificationTemplateDto.fromJson(json)
+          : null,
+    );
+  }
+}
+
+class NotificationLogsPageResponse {
+  final List<NotificationLogResponse> result;
+  final int totalCount;
+  final int pageNumber;
+  final int pageSize;
+
+  NotificationLogsPageResponse({
+    required this.result,
+    required this.totalCount,
+    required this.pageNumber,
+    required this.pageSize,
+  });
+
+  factory NotificationLogsPageResponse.fromJson(Map<String, dynamic> json) {
+    return NotificationLogsPageResponse(
+      result: (json['result'] as List<dynamic>?)
+              ?.map((item) => NotificationLogResponse.fromJson(item as Map<String, dynamic>))
+              .toList() ??
+          [],
+      totalCount: json['totalCount'] ?? 0,
+      pageNumber: json['pageNumber'] ?? 1,
+      pageSize: json['pageSize'] ?? 20,
+    );
   }
 }

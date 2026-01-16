@@ -116,15 +116,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
                 userToken: refreshed,
                 isAuthenticated: true,
               );
-          // Cargar perfil del usuario
-          await loadUserProfile();
-          // Inicializar notificaciones
-          try {
-            await _initializeNotifications();
-          } catch (e) {
-            // Error silencioso al inicializar notificaciones
-          }
-        } else {
+              // Cargar perfil del usuario
+              await loadUserProfile();
+            } else {
           // No se pudo refrescar, limpiar y pedir login
           await _clearAuthState();
         }
@@ -141,7 +135,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       // Cargar perfil del usuario
       await loadUserProfile();
-      // Inicializar notificaciones
+      // ✅ Inicializar notificaciones si el usuario ya estaba autenticado
       try {
         await _initializeNotifications();
       } catch (e) {
@@ -252,11 +246,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         userProfile: profile,
       );
       
-      // Inicializar notificaciones después del login
+      // ✅ Inicializar notificaciones remotas después del login exitoso
       try {
         await _initializeNotifications();
       } catch (e) {
-        // Error silencioso al inicializar notificaciones
+        // No fallar el login si las notificaciones fallan
       }
       
       return true;
@@ -395,23 +389,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  /// Inicializar notificaciones FCM
+  /// Inicializar notificaciones remotas (FCM)
   Future<void> _initializeNotifications() async {
     try {
+      // Solo inicializar si el usuario está autenticado y no está en modo demo
       if (state.isAuthenticated && !state.isDemoMode) {
-        developer.log('🔔 [AUTH] Inicializando notificaciones FCM...');
         final fcmApi = ref.read(fcmApiProvider);
         
         // Inicializar NotificationHandler con el ref
         NotificationHandler.initialize(ref);
         
         await FlutterRemoteNotifications.init(fcmApi, ref: ref);
-        developer.log('🔔 [AUTH] Notificaciones FCM inicializadas correctamente');
-      } else {
-        developer.log('🔔 [AUTH] Usuario no autenticado o modo demo, no se inicializan notificaciones');
       }
-    } catch (e, stackTrace) {
-      developer.log('❌ [AUTH] Error al inicializar notificaciones', error: e, stackTrace: stackTrace);
+    } catch (e) {
+      // Error silencioso al inicializar notificaciones
     }
   }
 }

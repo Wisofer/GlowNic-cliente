@@ -57,7 +57,11 @@ class FlutterLocalNotifications {
     final n = message.notification;
     final title = n?.title ?? message.data['title'] ?? 'GlowNic';
     final body = n?.body ?? message.data['body'] ?? '';
+    // TODO: Usar imageUrl y avatarUrl para mostrar imágenes en notificaciones
+    // final imageUrl = n?.android?.imageUrl ?? n?.apple?.imageUrl ?? message.data['image'];
+    // final avatarUrl = message.data['avatar'];
 
+    // Configurar detalles de Android
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       kHighImportanceChannelId,
       kHighImportanceChannelName,

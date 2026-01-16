@@ -36,6 +36,16 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Cuando la app está completamente cerrada (terminated), el sistema operativo
   // ya muestra la notificación automáticamente desde FCM.
   // Si mostramos una notificación local aquí, se duplicaría.
+  // 
+  // El sistema operativo maneja automáticamente:
+  // - Notificaciones cuando la app está cerrada (terminated)
+  // - Notificaciones cuando la app está en background
+  //
+  // Solo necesitamos mostrar notificación local cuando la app está en FOREGROUND,
+  // que se maneja en el listener onMessage (línea 111-132).
+  //
+  // ⚠️ NOTA: No podemos actualizar el badge aquí porque este handler corre en un isolate separado
+  // y no tiene acceso a Riverpod. El badge se actualizará cuando la app se abra.
   
   developer.log('Notificación procesada en background handler (sistema mostrará la notificación)');
 }
@@ -89,14 +99,10 @@ class FlutterRemoteNotifications {
 
     // ✅ Obtener token FCM
     String? token = await messaging.getToken();
-    developer.log('🔔 [FCM] Token FCM obtenido: ${token != null ? token.substring(0, 20) + "..." : "null"}');
-    if (token == null || token.isEmpty) {
-      developer.log('⚠️ [FCM] Token FCM es null o vacío, esperando refresh...');
-    } else {
-      developer.log('✅ [FCM] Token FCM válido, longitud: ${token.length}');
-    }
 
     // ✅ ESCENARIO 2: Manejar cuando se abre la app desde una notificación (BACKGROUND)
+    // Esto se ejecuta cuando la app está en segundo plano y el usuario toca la notificación
+    // Cancelar subscription anterior si existe
     await _onMessageOpenedAppSubscription?.cancel();
     _onMessageOpenedAppSubscription = FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       developer.log('📱 [BACKGROUND] App abierta desde notificación: ${message.messageId}');
@@ -119,6 +125,7 @@ class FlutterRemoteNotifications {
     });
 
     // ✅ ESCENARIO 1: Manejar mensajes cuando la app está en FOREGROUND (abierta y visible)
+    // Cancelar subscription anterior si existe
     await _onMessageSubscription?.cancel();
     _onMessageSubscription = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       developer.log('📱 [FOREGROUND] Notificación recibida: id=${message.messageId}');
@@ -136,20 +143,13 @@ class FlutterRemoteNotifications {
       // Procesar notificación (actualizar contadores, refrescar dashboard, etc.)
       NotificationHandler.handleNotification(message);
 
-      // ✅ Actualizar badge de notificaciones automáticamente
-      if (_ref != null) {
-        try {
-          _ref!.read(notificationsProvider.notifier).refresh();
-        } catch (e) {
-          // Error silencioso
-        }
-      }
-
       // ✅ Mostrar notificación local (el sistema NO la muestra automáticamente en foreground)
       FlutterLocalNotifications.showNotificationFromMessage(message);
     });
 
     // ✅ ESCENARIO 3: Manejar cold start (app completamente CERRADA)
+    // Esto se ejecuta cuando la app está completamente cerrada y el usuario toca la notificación
+    // El sistema operativo ya mostró la notificación, solo necesitamos navegar
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
       developer.log('📱 [TERMINATED] Cold start desde notificación: ${initialMessage.messageId}');
@@ -204,36 +204,17 @@ class FlutterRemoteNotifications {
 
   static Future<void> _syncFcmToken(FcmApi fcmApi, String token) async {
     try {
-      developer.log('🔄 [FCM] Sincronizando token FCM con backend...');
-      developer.log('🔄 [FCM] Token a sincronizar: ${token.substring(0, 20)}...');
-      
       final stored = await fcmApi.getStoredFcmToken();
-      developer.log('🔄 [FCM] Token almacenado: ${stored != null ? stored.substring(0, 20) + "..." : "null"}');
       
       if (stored == null || stored.isEmpty) {
         // Registrar dispositivo nuevo
-        developer.log('📝 [FCM] Registrando nuevo dispositivo...');
-        try {
-          final device = await fcmApi.createDevice(fcmToken: token);
-          if (device != null) {
-            developer.log('✅ [FCM] Dispositivo registrado exitosamente: ID=${device.id}');
-          } else {
-            developer.log('⚠️ [FCM] Registro falló, pero token guardado localmente. Se intentará nuevamente más tarde.');
-          }
-        } catch (e) {
-          developer.log('⚠️ [FCM] Error al registrar dispositivo: $e');
-          developer.log('⚠️ [FCM] El token está guardado localmente y se intentará registrar más tarde.');
-        }
+        await fcmApi.createDevice(fcmToken: token);
       } else if (stored != token) {
         // Actualizar token existente
-        developer.log('🔄 [FCM] Actualizando token existente...');
         await fcmApi.refreshDeviceFcmToken(newFcmToken: token);
-        developer.log('✅ [FCM] Token actualizado exitosamente');
-      } else {
-        developer.log('✅ [FCM] Token ya está sincronizado, no se necesita actualizar');
       }
     } catch (e, s) {
-      developer.log('❌ [FCM] Error sincronizando token FCM con backend', error: e, stackTrace: s);
+      developer.log('Error syncing device FCM token', error: e, stackTrace: s);
     }
   }
 }
