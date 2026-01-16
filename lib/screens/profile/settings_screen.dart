@@ -6,8 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../providers/settings/settings_notifier.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/providers.dart';
-import '../../services/notification/flutter_remote_notifications.dart';
+
 import '../../utils/audio_helper.dart';
 import '../../utils/snackbar_helper.dart';
 
@@ -34,7 +33,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     });
 
     try {
-      final settings = await FirebaseMessaging.instance.getNotificationSettings();
+      final settings = await FirebaseMessaging.instance
+          .getNotificationSettings();
       setState(() {
         _notificationSettings = settings;
         _isCheckingPermissions = false;
@@ -72,9 +72,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // Si se otorgaron permisos, inicializar FCM
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
-        final fcmApi = ref.read(fcmApiProvider);
-        await FlutterRemoteNotifications.init(fcmApi, ref: ref);
-        
+        // Inicializar notificaciones a través del provider
+        await ref.read(authNotifierProvider.notifier).initializeNotifications();
+
         SnackbarHelper.showSuccess(
           title: 'Notificaciones activadas',
           message: 'Ahora recibirás notificaciones push',
@@ -84,7 +84,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         if (await Permission.notification.isPermanentlyDenied) {
           SnackbarHelper.showError(
             title: 'Permisos denegados',
-            message: 'Por favor, activa las notificaciones desde la configuración del sistema',
+            message:
+                'Por favor, activa las notificaciones desde la configuración del sistema',
           );
           // Abrir configuración del sistema
           await openAppSettings();
@@ -146,20 +147,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (_notificationSettings == null) {
       return false;
     }
-    return _notificationSettings!.authorizationStatus == AuthorizationStatus.authorized ||
-           _notificationSettings!.authorizationStatus == AuthorizationStatus.provisional;
+    return _notificationSettings!.authorizationStatus ==
+            AuthorizationStatus.authorized ||
+        _notificationSettings!.authorizationStatus ==
+            AuthorizationStatus.provisional;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final textColor = isDark ? const Color(0xFFFAFAFA) : const Color(0xFF1F2937);
-    final mutedColor = isDark ? const Color(0xFF71717A) : const Color(0xFF6B7280);
+    final textColor = isDark
+        ? const Color(0xFFFAFAFA)
+        : const Color(0xFF1F2937);
+    final mutedColor = isDark
+        ? const Color(0xFF71717A)
+        : const Color(0xFF6B7280);
     final cardColor = isDark ? const Color(0xFF18181B) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF27272A) : const Color(0xFFE5E7EB);
+    final borderColor = isDark
+        ? const Color(0xFF27272A)
+        : const Color(0xFFE5E7EB);
     const accentColor = Color(0xFFEC4899);
-    
+
     final settings = ref.watch(settingsNotifierProvider);
 
     return Scaffold(
@@ -175,7 +184,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      backgroundColor: isDark ? const Color(0xFF0A0A0B) : const Color(0xFFF9FAFB),
+      backgroundColor: isDark
+          ? const Color(0xFF0A0A0B)
+          : const Color(0xFFF9FAFB),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -183,10 +194,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           children: [
             Text(
               'Personaliza tu experiencia',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: mutedColor,
-              ),
+              style: GoogleFonts.inter(fontSize: 14, color: mutedColor),
             ),
             const SizedBox(height: 24),
 
@@ -213,17 +221,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _SettingOption(
                     icon: Iconsax.moon,
                     title: 'Modo Oscuro',
-                    subtitle: settings.themeMode == ThemeMode.dark 
-                        ? 'Tema oscuro activado' 
+                    subtitle: settings.themeMode == ThemeMode.dark
+                        ? 'Tema oscuro activado'
                         : settings.themeMode == ThemeMode.light
-                            ? 'Tema claro activado'
-                            : 'Siguiendo configuración del sistema',
+                        ? 'Tema claro activado'
+                        : 'Siguiendo configuración del sistema',
                     trailing: Switch(
                       value: settings.themeMode == ThemeMode.dark,
                       onChanged: (value) {
-                        ref.read(settingsNotifierProvider.notifier).setThemeMode(
-                          value ? ThemeMode.dark : ThemeMode.light,
-                        );
+                        ref
+                            .read(settingsNotifierProvider.notifier)
+                            .setThemeMode(
+                              value ? ThemeMode.dark : ThemeMode.light,
+                            );
                       },
                       activeColor: accentColor,
                     ),
@@ -261,9 +271,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     subtitle: _getNotificationStatusText(),
                     trailing: _isNotificationEnabled()
                         ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: _getNotificationStatusColor(isDark).withAlpha(20),
+                              color: _getNotificationStatusColor(
+                                isDark,
+                              ).withAlpha(20),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
@@ -292,7 +307,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         : TextButton(
                             onPressed: _requestNotificationPermissions,
                             style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
@@ -312,11 +330,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _SettingOption(
                     icon: Iconsax.sound,
                     title: 'Sonidos',
-                    subtitle: settings.soundsEnabled ? 'Activados' : 'Desactivados',
+                    subtitle: settings.soundsEnabled
+                        ? 'Activados'
+                        : 'Desactivados',
                     trailing: Switch(
                       value: settings.soundsEnabled,
                       onChanged: (value) {
-                        ref.read(settingsNotifierProvider.notifier).setSoundsEnabled(value);
+                        ref
+                            .read(settingsNotifierProvider.notifier)
+                            .setSoundsEnabled(value);
                         // Actualizar AudioHelper inmediatamente
                         AudioHelper.setEnabled(value);
                       },
@@ -354,7 +376,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     icon: Iconsax.global,
                     title: 'Idioma de la Aplicación',
                     subtitle: 'Español',
-                    trailing: Icon(Iconsax.arrow_right_3, color: mutedColor.withAlpha(100), size: 18),
+                    trailing: Icon(
+                      Iconsax.arrow_right_3,
+                      color: mutedColor.withAlpha(100),
+                      size: 18,
+                    ),
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -422,10 +448,7 @@ class _SettingOption extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: mutedColor,
-                    ),
+                    style: GoogleFonts.inter(fontSize: 12, color: mutedColor),
                   ),
                 ],
               ),
@@ -439,4 +462,3 @@ class _SettingOption extends StatelessWidget {
     return widget;
   }
 }
-

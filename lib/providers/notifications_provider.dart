@@ -49,8 +49,14 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
   }
 
   /// Cargar notificaciones
+  /// Evita cargar si ya se está cargando para prevenir múltiples llamadas simultáneas
   Future<void> loadNotifications({bool showLoading = true}) async {
     if (!_isAuthenticated()) return;
+    
+    // ✅ Prevenir múltiples llamadas simultáneas
+    if (state.isLoading && !showLoading) {
+      return;
+    }
 
     if (showLoading) {
       state = state.copyWith(isLoading: true, clearError: true);
@@ -60,10 +66,22 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
       final fcmApi = ref.read(fcmApiProvider);
       final notifications = await fcmApi.getNotificationLogs(page: 1, pageSize: 50);
 
-      final unreadCount = notifications.where((n) => n.status == 'sent').length;
+      // ✅ Eliminar duplicados basados en ID antes de actualizar el estado
+      final uniqueNotifications = <int, NotificationLogDto>{};
+      for (final notification in notifications) {
+        if (!uniqueNotifications.containsKey(notification.id)) {
+          uniqueNotifications[notification.id] = notification;
+        }
+      }
+      final deduplicatedNotifications = uniqueNotifications.values.toList();
+      
+      // ✅ Ordenar por fecha (más recientes primero)
+      deduplicatedNotifications.sort((a, b) => b.sentAt.compareTo(a.sentAt));
+
+      final unreadCount = deduplicatedNotifications.where((n) => n.status == 'sent').length;
 
       state = state.copyWith(
-        notifications: notifications,
+        notifications: deduplicatedNotifications,
         isLoading: false,
         unreadCount: unreadCount,
         clearError: true,

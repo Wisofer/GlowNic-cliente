@@ -53,13 +53,33 @@ class FlutterLocalNotifications {
         ?.createNotificationChannel(channel);
   }
 
+  /// Generar ID único para la notificación local basado en messageId y timestamp
+  /// Esto evita colisiones de hashCode
+  static int _generateNotificationId(RemoteMessage message) {
+    final messageId = message.messageId ?? '';
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    
+    // Combinar messageId y timestamp para un ID único
+    // Usar los últimos 31 bits para evitar números negativos
+    if (messageId.isNotEmpty) {
+      return (messageId.hashCode.abs() % 2147483647);
+    }
+    
+    // Si no hay messageId, usar timestamp (mod 31 bits)
+    return (timestamp % 2147483647);
+  }
+
   static Future<void> showNotificationFromMessage(RemoteMessage message) async {
+    // ✅ Validar que el mensaje tenga contenido
     final n = message.notification;
     final title = n?.title ?? message.data['title'] ?? 'GlowNic';
     final body = n?.body ?? message.data['body'] ?? '';
-    // TODO: Usar imageUrl y avatarUrl para mostrar imágenes en notificaciones
-    // final imageUrl = n?.android?.imageUrl ?? n?.apple?.imageUrl ?? message.data['image'];
-    // final avatarUrl = message.data['avatar'];
+    
+    // Si no hay título ni cuerpo, no mostrar notificación
+    if (title.isEmpty && body.isEmpty) {
+      developer.log('⚠️ [LocalNotification] Mensaje sin contenido, omitiendo notificación');
+      return;
+    }
 
     // Configurar detalles de Android
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
@@ -70,6 +90,8 @@ class FlutterLocalNotifications {
       priority: Priority.high,
       category: AndroidNotificationCategory.message,
       showWhen: true,
+      enableVibration: true,
+      playSound: true,
     );
 
     const NotificationDetails platformDetails = NotificationDetails(
@@ -83,12 +105,18 @@ class FlutterLocalNotifications {
 
     final payload = json.encode({
       'type': message.data['type'] ?? message.data['route'] ?? 'home',
+      'messageId': message.messageId,
       if (message.data.containsKey('deeplink')) 'deeplink': message.data['deeplink'],
       'data': message.data,
     });
 
+    // ✅ Usar ID único basado en messageId en lugar de hashCode
+    final notificationId = _generateNotificationId(message);
+    
+    developer.log('🔔 [LocalNotification] Mostrando notificación: id=$notificationId, messageId=${message.messageId}');
+    
     await flutterLocalNotificationsPlugin.show(
-      message.hashCode,
+      notificationId,
       title,
       body,
       platformDetails,

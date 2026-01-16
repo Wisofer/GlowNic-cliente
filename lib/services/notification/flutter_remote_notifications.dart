@@ -56,6 +56,11 @@ class FlutterRemoteNotifications {
   static StreamSubscription<RemoteMessage>? _onMessageSubscription;
   static StreamSubscription<RemoteMessage>? _onMessageOpenedAppSubscription;
   
+  // ✅ Sistema de tracking para evitar procesar el mismo mensaje dos veces
+  static final Set<String> _processedMessageIds = <String>{};
+  static DateTime? _lastRefreshTime;
+  static const Duration _refreshDebounceDuration = Duration(seconds: 2);
+  
   static Future<void> init(FcmApi fcmApi, {Ref? ref}) async {
     // ✅ Protección contra inicialización múltiple
     if (_initialized) {
@@ -105,19 +110,23 @@ class FlutterRemoteNotifications {
     // Cancelar subscription anterior si existe
     await _onMessageOpenedAppSubscription?.cancel();
     _onMessageOpenedAppSubscription = FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      developer.log('📱 [BACKGROUND] App abierta desde notificación: ${message.messageId}');
+      final messageId = message.messageId ?? 'unknown-${DateTime.now().millisecondsSinceEpoch}';
       
-      // ✅ Actualizar badge de notificaciones cuando se abre desde background
-      if (_ref != null) {
-        try {
-          _ref!.read(notificationsProvider.notifier).refresh();
-        } catch (e) {
-          // Error silencioso
-        }
+      // ✅ Evitar procesar el mismo mensaje dos veces
+      if (_processedMessageIds.contains(messageId)) {
+        developer.log('⏭️ [BACKGROUND] Mensaje ya procesado, omitiendo: $messageId');
+        return;
       }
+      
+      _processedMessageIds.add(messageId);
+      developer.log('📱 [BACKGROUND] App abierta desde notificación: $messageId');
+      
+      // ✅ Actualizar badge con debounce para evitar múltiples llamadas
+      _refreshNotificationsWithDebounce();
       
       final payload = json.encode({
         'type': message.data['type'] ?? message.data['route'] ?? 'home',
+        'messageId': messageId,
         if (message.data.containsKey('deeplink')) 'deeplink': message.data['deeplink'],
         'data': message.data,
       });
@@ -128,7 +137,16 @@ class FlutterRemoteNotifications {
     // Cancelar subscription anterior si existe
     await _onMessageSubscription?.cancel();
     _onMessageSubscription = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      developer.log('📱 [FOREGROUND] Notificación recibida: id=${message.messageId}');
+      final messageId = message.messageId ?? 'unknown-${DateTime.now().millisecondsSinceEpoch}';
+      
+      // ✅ Evitar procesar el mismo mensaje dos veces
+      if (_processedMessageIds.contains(messageId)) {
+        developer.log('⏭️ [FOREGROUND] Mensaje ya procesado, omitiendo: $messageId');
+        return;
+      }
+      
+      _processedMessageIds.add(messageId);
+      developer.log('📱 [FOREGROUND] Notificación recibida: id=$messageId');
       
       final type = (message.data['type'] ?? message.data['route'] ?? '')
           .toString()
@@ -137,11 +155,16 @@ class FlutterRemoteNotifications {
 
       if (suppressedInForeground.contains(type)) {
         developer.log('Notificación suprimida en foreground para type="$type"');
+        // Limpiar el ID si se suprime para permitir reintentos
+        _processedMessageIds.remove(messageId);
         return;
       }
 
       // Procesar notificación (actualizar contadores, refrescar dashboard, etc.)
       NotificationHandler.handleNotification(message);
+
+      // ✅ Actualizar badge con debounce
+      _refreshNotificationsWithDebounce();
 
       // ✅ Mostrar notificación local (el sistema NO la muestra automáticamente en foreground)
       FlutterLocalNotifications.showNotificationFromMessage(message);
@@ -150,27 +173,13 @@ class FlutterRemoteNotifications {
     // ✅ ESCENARIO 3: Manejar cold start (app completamente CERRADA)
     // Esto se ejecuta cuando la app está completamente cerrada y el usuario toca la notificación
     // El sistema operativo ya mostró la notificación, solo necesitamos navegar
-    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-    if (initialMessage != null) {
-      developer.log('📱 [TERMINATED] Cold start desde notificación: ${initialMessage.messageId}');
-      
-      // ✅ Actualizar badge de notificaciones cuando se abre desde terminated
-      if (_ref != null) {
-        try {
-          _ref!.read(notificationsProvider.notifier).refresh();
-        } catch (e) {
-          // Error silencioso
-        }
-      }
-      
-      final payload = json.encode({
-        'type': initialMessage.data['type'] ?? initialMessage.data['route'] ?? 'home',
-        if (initialMessage.data.containsKey('deeplink'))
-          'deeplink': initialMessage.data['deeplink'],
-        'data': initialMessage.data,
-      });
-      NavigationService.navigateFromPayload(payload);
-    }
+    // IMPORTANTE: getInitialMessage() solo retorna el mensaje UNA vez, al inicio
+    // Si retorna null, significa que la app no se abrió desde una notificación
+    // o que el mensaje ya fue procesado por el sistema
+    
+    // Verificar mensaje inicial de forma asíncrona para no bloquear la inicialización
+    // Usar un pequeño delay para asegurar que la app esté completamente inicializada
+    _processInitialMessage();
 
     // ✅ Sincronizar token inicial con el backend
     if (token != null && token.isNotEmpty) {
@@ -187,6 +196,9 @@ class FlutterRemoteNotifications {
       }
     });
     
+    // ✅ Limpiar mensajes antiguos periódicamente
+    _cleanOldProcessedMessages();
+    
     // ✅ Marcar como inicializado
     _initialized = true;
     developer.log('FCM inicializado correctamente');
@@ -200,6 +212,78 @@ class FlutterRemoteNotifications {
     _onMessageSubscription = null;
     _onMessageOpenedAppSubscription = null;
     _ref = null;
+    _processedMessageIds.clear();
+    _lastRefreshTime = null;
+  }
+  
+  /// Refrescar notificaciones con debounce para evitar múltiples llamadas
+  static void _refreshNotificationsWithDebounce() {
+    if (_ref == null) return;
+    
+    final now = DateTime.now();
+    
+    // Si el último refresh fue hace menos de 2 segundos, no hacer nada
+    if (_lastRefreshTime != null && 
+        now.difference(_lastRefreshTime!) < _refreshDebounceDuration) {
+      developer.log('⏭️ [FCM] Refresh omitido (debounce): último refresh hace ${now.difference(_lastRefreshTime!).inMilliseconds}ms');
+      return;
+    }
+    
+    _lastRefreshTime = now;
+    
+    try {
+      _ref!.read(notificationsProvider.notifier).refresh();
+      developer.log('🔄 [FCM] Badge de notificaciones actualizado');
+    } catch (e) {
+      developer.log('❌ [FCM] Error al actualizar badge: $e');
+    }
+  }
+  
+  /// Procesar mensaje inicial (cold start desde notificación)
+  static Future<void> _processInitialMessage() async {
+    // Pequeño delay para asegurar que la app esté completamente inicializada
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    try {
+      final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) {
+        final messageId = initialMessage.messageId ?? 'initial-${DateTime.now().millisecondsSinceEpoch}';
+        
+        // ✅ Evitar procesar el mismo mensaje dos veces
+        if (!_processedMessageIds.contains(messageId)) {
+          _processedMessageIds.add(messageId);
+          developer.log('📱 [TERMINATED] Cold start desde notificación: $messageId');
+          
+          // ✅ Actualizar badge con debounce (delay adicional para evitar conflicto con init)
+          Future.delayed(const Duration(milliseconds: 1000), () {
+            _refreshNotificationsWithDebounce();
+          });
+          
+          final payload = json.encode({
+            'type': initialMessage.data['type'] ?? initialMessage.data['route'] ?? 'home',
+            'messageId': messageId,
+            if (initialMessage.data.containsKey('deeplink'))
+              'deeplink': initialMessage.data['deeplink'],
+            'data': initialMessage.data,
+          });
+          NavigationService.navigateFromPayload(payload);
+        } else {
+          developer.log('⏭️ [TERMINATED] Mensaje inicial ya procesado, omitiendo: $messageId');
+        }
+      }
+    } catch (e, stackTrace) {
+      developer.log('❌ [TERMINATED] Error procesando mensaje inicial', error: e, stackTrace: stackTrace);
+    }
+  }
+  
+  /// Limpiar mensajes antiguos del tracking (para evitar memory leak)
+  static void _cleanOldProcessedMessages() {
+    // Limitar el tamaño del Set a 100 mensajes
+    if (_processedMessageIds.length > 100) {
+      final toRemove = _processedMessageIds.toList().take(_processedMessageIds.length - 50).toSet();
+      _processedMessageIds.removeAll(toRemove);
+      developer.log('🧹 [FCM] Limpiados ${toRemove.length} mensajes antiguos del tracking');
+    }
   }
 
   static Future<void> _syncFcmToken(FcmApi fcmApi, String token) async {

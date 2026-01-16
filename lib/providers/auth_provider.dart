@@ -99,16 +99,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final savedToken = await _tokenStorage.getAccessToken();
       final refreshToken = await _tokenStorage.getRefreshToken();
-      
+
       if (savedToken != null && savedToken.isNotEmpty) {
         // Verificar si el token está expirado
         if (JwtDecoder.isTokenExpired(savedToken)) {
           // Token expirado, intentar refrescar antes de limpiar
-          
+
           // Solo intentar refresh si hay refreshToken disponible
           if (refreshToken != null && refreshToken.isNotEmpty) {
             final refreshed = await _tryRefreshToken(refreshToken);
-            
+
             if (refreshed != null && refreshed.isNotEmpty) {
               // Token refrescado exitosamente
               _dio.options.headers['Authorization'] = 'Bearer $refreshed';
@@ -119,29 +119,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
               // Cargar perfil del usuario
               await loadUserProfile();
             } else {
-          // No se pudo refrescar, limpiar y pedir login
-          await _clearAuthState();
+              // No se pudo refrescar, limpiar y pedir login
+              await _clearAuthState();
+            }
+          } else {
+            // No hay refreshToken, limpiar y pedir login
+            await _clearAuthState();
+          }
+        } else {
+          // Token válido, configurar header
+          _dio.options.headers['Authorization'] = 'Bearer $savedToken';
+          state = state.copyWith(userToken: savedToken, isAuthenticated: true);
+          // Cargar perfil del usuario
+          await loadUserProfile();
+          // ✅ Inicializar notificaciones si el usuario ya estaba autenticado
+          try {
+            await initializeNotifications();
+          } catch (e) {
+            // Error silencioso al inicializar notificaciones
+          }
         }
-      } else {
-        // No hay refreshToken, limpiar y pedir login
-        await _clearAuthState();
-      }
-    } else {
-      // Token válido, configurar header
-      _dio.options.headers['Authorization'] = 'Bearer $savedToken';
-      state = state.copyWith(
-        userToken: savedToken,
-        isAuthenticated: true,
-      );
-      // Cargar perfil del usuario
-      await loadUserProfile();
-      // ✅ Inicializar notificaciones si el usuario ya estaba autenticado
-      try {
-        await _initializeNotifications();
-      } catch (e) {
-        // Error silencioso al inicializar notificaciones
-      }
-    }
       } else {
         state = state.copyWith(
           isAuthenticated: false,
@@ -161,9 +158,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final response = await _dio.post(
         '/auth/refresh',
-        data: {
-          'refreshToken': refreshToken,
-        },
+        data: {'refreshToken': refreshToken},
         options: Options(
           headers: {'Content-Type': 'application/json'},
           validateStatus: (status) => status != null && status < 500,
@@ -174,17 +169,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
         // El backend devuelve: { "token": "...", "refreshToken": "...", "user": {...}, "role": "..." }
         final newToken = response.data['token'] as String?;
         final newRefreshToken = response.data['refreshToken'] as String?;
-        
+
         if (newToken != null && newToken.isNotEmpty) {
           // Guardar ambos tokens (access y refresh)
           await _tokenStorage.saveTokens(
-            newToken, 
-            newRefreshToken ?? newToken, // Si no hay nuevo refreshToken, usar el mismo
+            newToken,
+            newRefreshToken ??
+                newToken, // Si no hay nuevo refreshToken, usar el mismo
           );
           return newToken;
         }
       }
-      
+
       return null;
     } catch (e) {
       return null;
@@ -213,7 +209,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       // Login usando el nuevo AuthService
       final loginResponse = await _authService!.login(email, password);
-      
+
       final token = loginResponse.token;
       if (token.isEmpty) {
         state = state.copyWith(
@@ -228,7 +224,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Crear perfil desde los datos del login
       final user = loginResponse.user;
       final salon = user.salon; // Usar 'salon' en lugar de 'barber'
-      
+
       final profile = UserProfile(
         userId: user.id.toString(),
         userName: user.email,
@@ -245,14 +241,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         userProfile: profile,
       );
-      
+
       // ✅ Inicializar notificaciones remotas después del login exitoso
       try {
-        await _initializeNotifications();
+        await initializeNotifications();
       } catch (e) {
         // No fallar el login si las notificaciones fallan
       }
-      
+
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -303,7 +299,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final access = await _tokenStorage.getAccessToken();
       if (access == null || access.isEmpty) return false;
-      
+
       // Verificar si el token está expirado
       if (JwtDecoder.isTokenExpired(access)) {
         return false;
@@ -322,7 +318,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     // Primero verificar el rol desde el token
     final role = JwtDecoder.getUserRole(state.userToken!);
-    
+
     // Si es Employee, no intentar cargar perfil del dueño
     if (role == 'Employee') {
       final fallback = _buildProfileFromToken(state.userToken!);
@@ -337,7 +333,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Solo intentar obtener perfil del dueño si es rol Barber
       final salonService = ref.read(salonServiceProvider);
       final salonProfile = await salonService.getProfile();
-      
+
       final profile = UserProfile(
         userId: salonProfile.id.toString(),
         userName: salonProfile.email ?? '',
@@ -347,17 +343,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
         email: salonProfile.email,
         phone: salonProfile.phone,
       );
-      
+
       state = state.copyWith(userProfile: profile);
       return true;
     } catch (e) {
       final message = e.toString();
-      
+
       if (message.contains('401') || message.contains('Sesión expirada')) {
         await _clearAuthState();
         return false;
       }
-      
+
       // Si no se puede cargar, usar datos del token
       if (state.userToken != null && state.userProfile == null) {
         final fallback = _buildProfileFromToken(state.userToken!);
@@ -366,7 +362,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           return true;
         }
       }
-      
+
       return false;
     }
   }
@@ -390,15 +386,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Inicializar notificaciones remotas (FCM)
-  Future<void> _initializeNotifications() async {
+  Future<void> initializeNotifications() async {
     try {
       // Solo inicializar si el usuario está autenticado y no está en modo demo
       if (state.isAuthenticated && !state.isDemoMode) {
         final fcmApi = ref.read(fcmApiProvider);
-        
+
         // Inicializar NotificationHandler con el ref
         NotificationHandler.initialize(ref);
-        
+
         await FlutterRemoteNotifications.init(fcmApi, ref: ref);
       }
     } catch (e) {
@@ -408,7 +404,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 /// Provider de Riverpod para exponer el estado y la lógica de autenticación.
-final authNotifierProvider =
-    StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
+  ref,
+) {
   return AuthNotifier(ref);
 });
