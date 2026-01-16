@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../providers/pending_appointments_provider.dart';
+import '../../providers/dashboard_refresh_provider.dart';
+import '../../providers/notifications_provider.dart';
 import '../../utils/snackbar_helper.dart';
 
 /// Handler centralizado para procesar notificaciones y actualizar la UI
@@ -26,10 +28,13 @@ class NotificationHandler {
     final date = data['date'] ?? data['data']?['date'] ?? '';
     final time = data['time'] ?? data['data']?['time'] ?? '';
     
-    // Refrescar contador de citas pendientes
+    // Refrescar contador de citas pendientes y badge de notificaciones
     if (_ref != null) {
       try {
         _ref!.read(pendingAppointmentsProvider.notifier).refresh();
+        _ref!.read(dashboardRefreshProvider.notifier).refresh();
+        // ✅ Actualizar badge de notificaciones automáticamente
+        _ref!.read(notificationsProvider.notifier).refresh();
       } catch (e) {
         // Error silencioso
       }
@@ -58,10 +63,18 @@ class NotificationHandler {
     
     switch (type) {
       case 'appointment':
+        // handleAppointmentNotification ya actualiza el badge, no duplicar
         handleAppointmentNotification(message);
         break;
       default:
-        // Para otros tipos de notificaciones, no hacer nada especial
+        // Para otros tipos de notificaciones, solo actualizar badge
+        if (_ref != null) {
+          try {
+            _ref!.read(notificationsProvider.notifier).refresh();
+          } catch (e) {
+            // Error silencioso
+          }
+        }
         break;
     }
   }

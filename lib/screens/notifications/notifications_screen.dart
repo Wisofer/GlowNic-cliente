@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../../providers/notifications_provider.dart';
 import '../../models/notification_log.dart';
 import '../../services/navigation/navigation_service.dart';
-import '../../screens/appointments/appointments_screen.dart';
+import '../../main_theme.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -19,32 +19,36 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
+    // Cargar notificaciones al abrir la pantalla
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(notificationsProvider.notifier).loadNotifications();
     });
   }
 
   void _handleNotificationTap(NotificationLogDto notification) {
+    // Marcar como leída
     ref.read(notificationsProvider.notifier).markAsRead(notification.id);
+
+    // Navegar según el tipo
     final type = notification.type.toLowerCase();
     final data = notification.parsedPayload;
 
-    if (type == 'appointment' || type == 'cita') {
+    if (type == 'appointment') {
       final appointmentId = data['appointmentId'] ?? data['data']?['appointmentId'];
       if (appointmentId != null) {
-        Navigator.of(context).pop();
-        NavigationService.navigateTo(const AppointmentsScreen());
+        // Navegar a citas
+        Navigator.of(context).pop(); // Cerrar pantalla de notificaciones
+        NavigationService.navigateToHome();
+        // TODO: Navegar específicamente a la cita si hay un endpoint para eso
       }
-    } else if (type == 'announcement' || type == 'announcement') {
+    } else if (type == 'announcement') {
+      // Mostrar detalles del anuncio
       _showAnnouncementDialog(notification);
-    } else {
-      // Navegar al home por defecto
-      Navigator.of(context).pop();
-      NavigationService.navigateToHome();
     }
   }
 
   void _showAnnouncementDialog(NotificationLogDto notification) {
+    final data = notification.parsedPayload;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -131,7 +135,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ],
       ),
       body: notificationsState.isLoading
-          ? Center(child: CircularProgressIndicator(color: theme.colorScheme.primary))
+          ? Center(
+              child: CircularProgressIndicator(
+                color: theme.colorScheme.primary,
+              ),
+            )
           : notificationsState.notifications.isEmpty
               ? _buildEmptyState(mutedColor)
               : RefreshIndicator(
@@ -161,14 +169,26 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Iconsax.notification_bing, size: 64, color: mutedColor),
+          Icon(
+            Iconsax.notification_bing,
+            size: 64,
+            color: mutedColor.withOpacity(0.5),
+          ),
           const SizedBox(height: 16),
           Text(
             'No hay notificaciones',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: mutedColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tus notificaciones aparecerán aquí',
+            style: TextStyle(
+              fontSize: 14,
+              color: mutedColor.withOpacity(0.7),
             ),
           ),
         ],
@@ -184,90 +204,135 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     bool isDark,
   ) {
     final isUnread = notification.status == 'sent';
+    final type = notification.type.toLowerCase();
+
+    // Icono según el tipo
+    IconData icon;
+    Color iconColor;
+    switch (type) {
+      case 'appointment':
+        icon = Iconsax.calendar;
+        iconColor = SystemMovilColors.primary; // Rosa principal
+        break;
+      case 'announcement':
+        icon = Iconsax.notification;
+        iconColor = SystemMovilColors.secondary; // Púrpura secundario
+        break;
+      default:
+        icon = Iconsax.info_circle;
+        iconColor = mutedColor;
+    }
+
+    // Formatear fecha
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+    final formattedDate = dateFormat.format(notification.sentAt);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isUnread
-              ? const Color(0xFF10B981).withOpacity(0.3)
-              : (isDark ? const Color(0xFF27272A) : const Color(0xFFE5E7EB)),
-          width: isUnread ? 2 : 1,
-        ),
+        borderRadius: BorderRadius.circular(12),
+        border: isUnread
+            ? Border.all(color: SystemMovilColors.primary.withOpacity(0.3), width: 1.5)
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: isUnread
-                ? const Color(0xFF10B981).withOpacity(0.1)
-                : mutedColor.withOpacity(0.1),
-            shape: BoxShape.circle,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _handleNotificationTap(notification),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icono
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 20),
+                ),
+                const SizedBox(width: 12),
+                // Contenido
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              notification.title.isNotEmpty
+                                  ? notification.title
+                                  : 'Notificación',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
+                                color: textColor,
+                              ),
+                            ),
+                          ),
+                          if (isUnread)
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: SystemMovilColors.primary, // Rosa para indicador no leído
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        notification.body.isNotEmpty
+                            ? notification.body
+                            : 'Sin descripción',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: mutedColor,
+                          height: 1.4,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        formattedDate,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: mutedColor.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Botón eliminar
+                IconButton(
+                  icon: Icon(
+                    Iconsax.trash,
+                    size: 18,
+                    color: mutedColor,
+                  ),
+                  onPressed: () => _deleteNotification(notification),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
           ),
-          child: Icon(
-            Iconsax.notification,
-            color: isUnread ? const Color(0xFF10B981) : mutedColor,
-            size: 24,
-          ),
         ),
-        title: Text(
-          notification.title,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
-            color: textColor,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              notification.body,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: mutedColor,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              dateFormat.format(notification.sentAt),
-              style: GoogleFonts.inter(
-                fontSize: 10,
-                color: mutedColor.withOpacity(0.7),
-              ),
-            ),
-          ],
-        ),
-        trailing: PopupMenuButton(
-          icon: Icon(Iconsax.more, color: mutedColor, size: 20),
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              child: const Text('Marcar como leída'),
-              onTap: () {
-                Future.delayed(Duration.zero, () {
-                  ref.read(notificationsProvider.notifier).markAsRead(notification.id);
-                });
-              },
-            ),
-            PopupMenuItem(
-              child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-              onTap: () {
-                Future.delayed(Duration.zero, () {
-                  _deleteNotification(notification);
-                });
-              },
-            ),
-          ],
-        ),
-        onTap: () => _handleNotificationTap(notification),
       ),
     );
   }

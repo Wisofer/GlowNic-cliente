@@ -10,6 +10,7 @@ class _Endpoints {
   // ✅ Rutas correctas: /api/notifications/*
   static const String devices = '/notifications/devices';
   static const String refreshToken = '/notifications/devices/refresh-token';
+  static String deviceDelete(int id) => '/notifications/devices/$id';
   
   static String notificationLogs({int? page, int? pageSize}) {
     final basePath = '/notifications/logs';
@@ -28,6 +29,7 @@ class _Endpoints {
   static String notificationLogOpened(int id) => '/notifications/logs/$id/opened';
   static String notificationLogDelete(int id) => '/notifications/logs/$id';
   static const String notificationLogOpenedAll = '/notifications/logs/opened-all';
+  static const String notificationLogDeleteAll = '/notifications/logs/delete-all';
 }
 
 class FcmApi {
@@ -171,6 +173,98 @@ class FcmApi {
   /// Obtener token FCM almacenado
   Future<String?> getStoredFcmToken() => _storage.getFcmToken();
 
+  /// Obtener lista de dispositivos del usuario
+  Future<List<DeviceDto>> getMyDevices() async {
+    developer.log('📥 [FCM API] Obteniendo dispositivos del usuario...');
+    
+    final access = await _tokenStorage.getAccessToken();
+    if (access == null || access.isEmpty) {
+      developer.log('❌ [FCM API] No hay token de acceso disponible');
+      throw Exception('No access token available');
+    }
+
+    final headers = {
+      ..._dio.options.headers,
+      'Authorization': 'Bearer $access',
+    };
+
+    developer.log('📤 [FCM API] Enviando GET a: ${_dio.options.baseUrl}${_Endpoints.devices}');
+
+    try {
+      final response = await _dio.get(
+        _Endpoints.devices,
+        options: Options(headers: headers),
+      );
+
+      developer.log('✅ [FCM API] Respuesta del servidor: ${response.statusCode}');
+
+      if (response.data is List) {
+        final devices = (response.data as List)
+            .map((item) => DeviceDto.fromJson(item as Map<String, dynamic>))
+            .toList();
+        developer.log('✅ [FCM API] Dispositivos obtenidos: ${devices.length}');
+        return devices;
+      }
+      
+      // Si la respuesta viene envuelta en un objeto
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+        if (data['data'] is List) {
+          final devices = (data['data'] as List)
+              .map((item) => DeviceDto.fromJson(item as Map<String, dynamic>))
+              .toList();
+          developer.log('✅ [FCM API] Dispositivos obtenidos: ${devices.length}');
+          return devices;
+        }
+      }
+      
+      developer.log('⚠️ [FCM API] Respuesta con formato inesperado');
+      return [];
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      developer.log('❌ [FCM API] Error obteniendo dispositivos: $status');
+      developer.log('❌ [FCM API] Respuesta: ${e.response?.data}');
+      
+      if (status == 404) {
+        developer.log('ℹ️ [FCM API] No se encontraron dispositivos');
+        return [];
+      }
+      rethrow;
+    }
+  }
+
+  /// Eliminar un dispositivo específico
+  Future<void> deleteDevice(int deviceId) async {
+    developer.log('🗑️ [FCM API] Eliminando dispositivo con ID: $deviceId');
+    
+    final access = await _tokenStorage.getAccessToken();
+    if (access == null || access.isEmpty) {
+      developer.log('❌ [FCM API] No hay token de acceso disponible');
+      throw Exception('No access token available');
+    }
+
+    final headers = {
+      ..._dio.options.headers,
+      'Authorization': 'Bearer $access',
+    };
+
+    final endpoint = _Endpoints.deviceDelete(deviceId);
+    developer.log('📤 [FCM API] Enviando DELETE a: ${_dio.options.baseUrl}$endpoint');
+
+    try {
+      await _dio.delete(
+        endpoint,
+        options: Options(headers: headers),
+      );
+      developer.log('✅ [FCM API] Dispositivo eliminado exitosamente');
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      developer.log('❌ [FCM API] Error eliminando dispositivo: $status');
+      developer.log('❌ [FCM API] Respuesta: ${e.response?.data}');
+      rethrow;
+    }
+  }
+
   /// Detectar plataforma actual
   String _detectPlatform() {
     if (kIsWeb) return 'web';
@@ -295,11 +389,35 @@ class FcmApi {
     }
   }
 
-  /// Eliminar todas las notificaciones (no está en la documentación, pero lo dejamos para futuras implementaciones)
+  /// Eliminar todas las notificaciones
   Future<void> deleteAllNotificationLogs() async {
-    // Nota: Este endpoint no está documentado, así que lo omitimos por ahora
-    // Si el backend lo implementa, se puede agregar
-    developer.log('⚠️ [FCM API] deleteAllNotificationLogs no está disponible en el backend');
-    throw Exception('Endpoint deleteAllNotificationLogs no está disponible');
+    developer.log('🗑️ [FCM API] Eliminando todas las notificaciones...');
+    
+    final access = await _tokenStorage.getAccessToken();
+    if (access == null || access.isEmpty) {
+      developer.log('❌ [FCM API] No hay token de acceso disponible');
+      throw Exception('No access token available');
+    }
+
+    final headers = {
+      ..._dio.options.headers,
+      'Authorization': 'Bearer $access',
+    };
+
+    final endpoint = _Endpoints.notificationLogDeleteAll;
+    developer.log('📤 [FCM API] Enviando DELETE a: ${_dio.options.baseUrl}$endpoint');
+
+    try {
+      await _dio.delete(
+        endpoint,
+        options: Options(headers: headers),
+      );
+      developer.log('✅ [FCM API] Todas las notificaciones eliminadas exitosamente');
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      developer.log('❌ [FCM API] Error eliminando todas las notificaciones: $status');
+      developer.log('❌ [FCM API] Respuesta: ${e.response?.data}');
+      rethrow;
+    }
   }
 }
