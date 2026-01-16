@@ -4,10 +4,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'dart:developer' as developer;
 import '../models/user_profile.dart';
 import '../services/api/auth_service.dart';
 import '../services/api/salon_service.dart';
 import '../services/storage/token_storage.dart';
+import '../services/notification/flutter_remote_notifications.dart';
+import '../services/notification/notification_handler.dart';
 import '../utils/jwt_decoder.dart';
 import 'providers.dart';
 
@@ -113,26 +116,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
                 userToken: refreshed,
                 isAuthenticated: true,
               );
-              // Cargar perfil del usuario
-              await loadUserProfile();
-            } else {
-              // No se pudo refrescar, limpiar y pedir login
-              await _clearAuthState();
-            }
-          } else {
-            // No hay refreshToken, limpiar y pedir login
-            await _clearAuthState();
-          }
-        } else {
-          // Token válido, configurar header
-          _dio.options.headers['Authorization'] = 'Bearer $savedToken';
-          state = state.copyWith(
-            userToken: savedToken,
-            isAuthenticated: true,
-          );
           // Cargar perfil del usuario
           await loadUserProfile();
+          // Inicializar notificaciones
+          try {
+            await _initializeNotifications();
+          } catch (e) {
+            // Error silencioso al inicializar notificaciones
+          }
+        } else {
+          // No se pudo refrescar, limpiar y pedir login
+          await _clearAuthState();
         }
+      } else {
+        // No hay refreshToken, limpiar y pedir login
+        await _clearAuthState();
+      }
+    } else {
+      // Token válido, configurar header
+      _dio.options.headers['Authorization'] = 'Bearer $savedToken';
+      state = state.copyWith(
+        userToken: savedToken,
+        isAuthenticated: true,
+      );
+      // Cargar perfil del usuario
+      await loadUserProfile();
+      // Inicializar notificaciones
+      try {
+        await _initializeNotifications();
+      } catch (e) {
+        // Error silencioso al inicializar notificaciones
+      }
+    }
       } else {
         state = state.copyWith(
           isAuthenticated: false,
@@ -236,6 +251,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         userProfile: profile,
       );
+      
+      // Inicializar notificaciones después del login
+      try {
+        await _initializeNotifications();
+      } catch (e) {
+        // Error silencioso al inicializar notificaciones
+      }
       
       return true;
     } catch (e) {
@@ -371,6 +393,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
       apellido: '',
       email: userName,
     );
+  }
+
+  /// Inicializar notificaciones FCM
+  Future<void> _initializeNotifications() async {
+    try {
+      if (state.isAuthenticated && !state.isDemoMode) {
+        developer.log('🔔 [AUTH] Inicializando notificaciones FCM...');
+        final fcmApi = ref.read(fcmApiProvider);
+        
+        // Inicializar NotificationHandler con el ref
+        NotificationHandler.initialize(ref);
+        
+        await FlutterRemoteNotifications.init(fcmApi, ref: ref);
+        developer.log('🔔 [AUTH] Notificaciones FCM inicializadas correctamente');
+      } else {
+        developer.log('🔔 [AUTH] Usuario no autenticado o modo demo, no se inicializan notificaciones');
+      }
+    } catch (e, stackTrace) {
+      developer.log('❌ [AUTH] Error al inicializar notificaciones', error: e, stackTrace: stackTrace);
+    }
   }
 }
 

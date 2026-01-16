@@ -38,6 +38,14 @@ dependencies:
   # Audio
   audioplayers: ^6.1.0
 
+  # Firebase
+  firebase_core: ^4.1.0
+  firebase_messaging: ^16.0.1
+
+  # Notifications
+  flutter_local_notifications: ^19.4.1
+  permission_handler: ^11.3.1
+
   # Localization
   flutter_localizations:
     sdk: flutter

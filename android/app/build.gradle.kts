@@ -7,9 +7,8 @@ plugins {
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 
-    // Google services plugin deshabilitado temporalmente
-    // Si necesitas Firebase, actualiza google-services.json con el nuevo package name
-    // id("com.google.gms.google-services")
+    // ✅ Google services plugin para Firebase
+    id("com.google.gms.google-services")
 }
 
 // Load keystore properties
@@ -70,10 +69,11 @@ flutter {
 }
 
 dependencies {
-  // Firebase deshabilitado temporalmente - no se está usando en la app
-  // Si necesitas Firebase, actualiza google-services.json con el nuevo package name
-  // implementation(platform("com.google.firebase:firebase-bom:34.2.0"))
-  // implementation("com.google.firebase:firebase-analytics")
+  // ✅ Firebase BoM (Bill of Materials)
+  implementation(platform("com.google.firebase:firebase-bom:34.2.0"))
+  // ✅ Dependencias de Firebase
+  implementation("com.google.firebase:firebase-analytics")
+  implementation("com.google.firebase:firebase-messaging")
 
   // Enable desugaring
   coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
